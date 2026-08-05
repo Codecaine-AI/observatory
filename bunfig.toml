@@ -1,0 +1,5 @@
+[install]
+globalDir = "./.bun-links"
+
+[install.cache]
+dir = "./.bun-cache"

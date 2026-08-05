@@ -1,0 +1,50 @@
+{
+  "registryVersion": 1,
+  "projects": [
+    {
+      "id": "canvas",
+      "name": "Canvas",
+      "kernelRoot": "../canvas/.agent-kernel",
+      "dbPath": null,
+      "catalogRoots": [
+        "../canvas/packages/canvas-agent/src/catalog"
+      ],
+      "readApiBaseUrl": "http://127.0.0.1:4820",
+      "viewerBaseUrl": "http://127.0.0.1:4830",
+      "extensionPackage": null,
+      "launchCommand": "bun run --cwd ../canvas dev:harness",
+      "autoLaunch": true,
+      "writable": true
+    },
+    {
+      "id": "simple-research",
+      "name": "Simple Research",
+      "kernelRoot": "../agent-kernel/examples/simple-research-kernel/.agent-kernel",
+      "dbPath": null,
+      "catalogRoots": [
+        "../agent-kernel/examples/simple-research-kernel/src/agent-catalog"
+      ],
+      "readApiBaseUrl": "http://127.0.0.1:8788",
+      "viewerBaseUrl": "http://127.0.0.1:5174",
+      "extensionPackage": null,
+      "launchCommand": "bun run --cwd ../agent-kernel/examples/simple-research-kernel api",
+      "autoLaunch": true,
+      "writable": true
+    },
+    {
+      "id": "prompt-kit",
+      "name": "Prompt Kit",
+      "kernelRoot": "../prompt-kit/packages/prompt-kit-agent/.agent-kernel",
+      "dbPath": null,
+      "catalogRoots": [
+        "../prompt-kit/packages/prompt-kit-agent/catalog"
+      ],
+      "readApiBaseUrl": "http://127.0.0.1:4850",
+      "viewerBaseUrl": null,
+      "extensionPackage": null,
+      "launchCommand": "bun run --cwd ../prompt-kit dev:agent",
+      "autoLaunch": true,
+      "writable": true
+    }
+  ]
+}
