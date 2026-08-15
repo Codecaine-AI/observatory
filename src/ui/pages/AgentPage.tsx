@@ -13,23 +13,17 @@ import { usePromptStyleSettings } from "@codecaine-ai/prompt-kit/ui/style";
 
 import {
   fetchCatalogAgentDetail,
-  fetchCatalogAgents,
   viewerApiPrefix,
   type RegistryProject,
 } from "../api";
 
-interface AgentsPageProps {
+interface AgentPageProps {
   project: RegistryProject;
+  /** Selected in the sidebar tree; the page renders exactly this agent. */
+  agent: CatalogAgentSummary;
 }
 
-type CatalogState =
-  | { status: "loading" }
-  | { status: "ready"; agents: CatalogAgentSummary[] }
-  | { status: "error"; message: string };
-
-export function AgentsPage({ project }: AgentsPageProps) {
-  const [state, setState] = useState<CatalogState>({ status: "loading" });
-  const [selectedName, setSelectedName] = useState<string | null>(null);
+export function AgentPage({ project, agent }: AgentPageProps) {
   const {
     settings: styleSettings,
     update: updateStyleSettings,
@@ -40,26 +34,6 @@ export function AgentsPage({ project }: AgentsPageProps) {
     PROMPT_STYLE_SIDEBAR_DEFAULT_WIDTH,
   );
 
-  useEffect(() => {
-    setSelectedName(null);
-    if (!project.live) return;
-
-    const controller = new AbortController();
-    setState({ status: "loading" });
-    void fetchCatalogAgents(project.id, controller.signal)
-      .then((body) => {
-        if (!Array.isArray(body.agents)) {
-          throw new Error("Agent catalog returned an invalid agent list.");
-        }
-        setState({ status: "ready", agents: body.agents });
-      })
-      .catch((cause: unknown) => {
-        if (controller.signal.aborted) return;
-        setState({ status: "error", message: errorMessage(cause) });
-      });
-    return () => controller.abort();
-  }, [project.id, project.live]);
-
   if (!project.live) {
     return (
       <UnavailablePanel
@@ -69,64 +43,8 @@ export function AgentsPage({ project }: AgentsPageProps) {
     );
   }
 
-  if (state.status === "loading") {
-    return <PageMessage>Loading agent catalog…</PageMessage>;
-  }
-  if (state.status === "error") {
-    return <UnavailablePanel title="Agent catalog unavailable" message={state.message} />;
-  }
-  if (state.agents.length === 0) {
-    return <PageMessage>No agents registered by this harness.</PageMessage>;
-  }
-
-  const selectedAgent =
-    state.agents.find((agent) => agent.name === selectedName) ?? state.agents[0]!;
-
   return (
     <section className="flex h-full min-h-[560px] gap-3 font-mono">
-      <aside className="flex w-60 shrink-0 flex-col overflow-hidden rounded-[3px] border border-border bg-card">
-        <header className="border-b border-border px-3 py-3">
-          <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-            Agents
-          </h2>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            {state.agents.length} registered
-          </p>
-        </header>
-        <ul className="min-h-0 flex-1 overflow-y-auto p-2">
-          {state.agents.map((agent) => {
-            const selected = agent.name === selectedAgent.name;
-            return (
-              <li key={agent.name}>
-                <button
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => setSelectedName(agent.name)}
-                  className={`mb-1 flex w-full items-center gap-2 rounded-[2px] border px-2.5 py-2 text-left transition-colors ${
-                    selected
-                      ? "border-status-info-border bg-status-info-fill/30 text-foreground"
-                      : "border-transparent text-muted-foreground hover:bg-muted/35 hover:text-foreground"
-                  }`}
-                >
-                  <span
-                    aria-hidden
-                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                      agent.valid ? "bg-status-success" : "bg-destructive"
-                    }`}
-                  />
-                  <span className="min-w-0">
-                    <span className="block truncate text-[12px] font-bold">{agent.name}</span>
-                    <span className="block truncate text-[10px] text-muted-foreground">
-                      {agent.model || "model not set"}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </aside>
-
       <div className="relative min-w-0 flex-1 overflow-hidden rounded-[3px] border border-border bg-card">
         {project.writable && (
           <button
@@ -145,17 +63,17 @@ export function AgentsPage({ project }: AgentsPageProps) {
         )}
         {project.writable ? (
           <AgentPromptLabContainer
-            key={`${project.id}:${selectedAgent.name}`}
+            key={`${project.id}:${agent.name}`}
             baseUrl={viewerApiPrefix(project.id)}
-            agentName={selectedAgent.name}
+            agentName={agent.name}
             className="h-full"
             styleSettings={styleSettings}
           />
         ) : (
           <ReadOnlyAgentDetail
-            key={`${project.id}:${selectedAgent.name}`}
+            key={`${project.id}:${agent.name}`}
             projectId={project.id}
-            agent={selectedAgent}
+            agent={agent}
           />
         )}
       </div>

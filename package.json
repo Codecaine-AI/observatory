@@ -8,7 +8,9 @@
     "api": "bun run src/server/index.ts",
     "ui": "bunx --bun vite --config src/ui/vite.config.ts",
     "test": "bun test",
-    "typecheck": "bunx --bun tsc -p tsconfig.json --noEmit"
+    "typecheck": "bunx --bun tsc -p tsconfig.json --noEmit",
+    "registry:check": "bun scripts/sync-registry.ts --check",
+    "registry:sync": "bun scripts/sync-registry.ts --write"
   },
   "dependencies": {
     "@agent-kernel/db": "link:@agent-kernel/db",

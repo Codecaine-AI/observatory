@@ -1,0 +1,808 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Observatory — sidebar UX directions</title>
+  <style>
+    :root {
+      --bg: #0b0d10;
+      --card: #12151a;
+      --card-2: #0e1115;
+      --border: #262b33;
+      --fg: #e2e6ec;
+      --muted: #8b93a1;
+      --blue: #6ea8fe;
+      --green: #54d693;
+      --amber: #e0b45c;
+      --red: #e06c75;
+      --blue-fill: rgba(110, 168, 254, .09);
+      --green-fill: rgba(84, 214, 147, .09);
+      --amber-fill: rgba(224, 180, 92, .09);
+      --red-fill: rgba(224, 108, 117, .09);
+      --radius: 3px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--fg);
+      background:
+        radial-gradient(circle at 50% -160px, rgba(110, 168, 254, .08), transparent 500px),
+        var(--bg);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    a { color: inherit; }
+    :focus-visible { outline: 1px solid var(--blue); outline-offset: 2px; }
+
+    .page-header {
+      width: min(1160px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 56px 0 28px;
+    }
+    .eyebrow, .section-label {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 6px 0 2px; font-size: 22px; letter-spacing: -.02em; }
+    .context { margin: 0; color: var(--muted); font-size: 11px; }
+    .anchor-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: rgba(11, 13, 16, .92);
+      backdrop-filter: blur(10px);
+    }
+    .anchor-nav {
+      display: flex;
+      width: min(1160px, calc(100% - 40px));
+      margin: 0 auto;
+      overflow-x: auto;
+    }
+    .anchor-nav a {
+      padding: 11px 16px 10px 0;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-decoration: none;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .anchor-nav a::after { content: "·"; margin-left: 16px; color: #3a414c; }
+    .anchor-nav a:last-child::after { content: ""; margin: 0; }
+    .anchor-nav a:hover { color: var(--fg); }
+
+    main { width: min(1160px, calc(100% - 40px)); margin: 0 auto; }
+    .direction { scroll-margin-top: 55px; padding: 68px 0 24px; }
+    .direction-head { display: flex; align-items: center; gap: 9px; }
+    h2 { margin: 0; font-size: 16px; letter-spacing: -.01em; }
+    .description { max-width: 810px; margin: 8px 0 18px; color: var(--muted); font-size: 11px; line-height: 1.7; }
+    .description strong { color: var(--fg); font-weight: 700; }
+    .callout { color: var(--blue); }
+    .page-footer { width: min(1160px, calc(100% - 40px)); margin: 40px auto 70px; border-top: 1px solid var(--border); padding-top: 16px; color: var(--muted); font-size: 9px; }
+
+    .browser {
+      width: 100%;
+      height: 620px;
+      overflow: hidden;
+      border: 1px solid #303640;
+      border-radius: 5px;
+      background: var(--bg);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, .28);
+    }
+    .browser-chrome {
+      position: relative;
+      display: flex;
+      align-items: center;
+      height: 34px;
+      border-bottom: 1px solid var(--border);
+      padding: 0 12px;
+      background: #0f1216;
+    }
+    .chrome-dots { display: flex; gap: 6px; }
+    .chrome-dot { width: 7px; height: 7px; border-radius: 50%; background: #3d434c; }
+    .chrome-dot:first-child { background: var(--red); }
+    .chrome-dot:nth-child(2) { background: var(--amber); }
+    .chrome-dot:nth-child(3) { background: var(--green); }
+    .browser-title {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #68717e;
+      font-size: 9px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .app { display: flex; height: calc(100% - 34px); min-width: 830px; }
+    .app-main { min-width: 0; flex: 1; background: var(--bg); }
+    .app-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 54px;
+      border-bottom: 1px solid var(--border);
+      padding: 0 18px;
+      background: rgba(18, 21, 26, .58);
+    }
+    .brand-small { font-size: 12px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+    .top-meta { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: .1em; }
+    .workspace { height: calc(100% - 54px); padding: 14px; overflow: auto; }
+
+    .dot { display: inline-block; width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: #56606d; }
+    .dot.online, .dot.valid { background: var(--green); box-shadow: 0 0 5px rgba(84, 214, 147, .48); }
+    .dot.warning { background: var(--amber); }
+    .dot.crashed { background: var(--red); }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 17px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 1px 5px 0;
+      color: var(--muted);
+      background: rgba(139, 147, 161, .06);
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .badge.online { border-color: rgba(84, 214, 147, .35); color: var(--green); background: var(--green-fill); }
+    .badge.offline { color: #9aa2ae; background: rgba(139, 147, 161, .06); }
+    .badge.warning { border-color: rgba(224, 180, 92, .36); color: var(--amber); background: var(--amber-fill); }
+    .badge.crashed { border-color: rgba(224, 108, 117, .4); color: var(--red); background: var(--red-fill); }
+    .badge.info { border-color: rgba(110, 168, 254, .38); color: var(--blue); background: var(--blue-fill); }
+    .badge.tui { border-color: rgba(110, 168, 254, .34); color: #9bc2ff; background: rgba(110, 168, 254, .08); }
+    .button, .chip, .segment button, .rail-button, .icon-action {
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      color: var(--muted);
+      background: var(--card);
+      cursor: pointer;
+    }
+    .button:hover, .chip:hover, .segment button:hover, .icon-action:hover { color: var(--fg); border-color: #3a424d; }
+    .button { padding: 5px 8px; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .button.danger:hover { color: var(--red); border-color: rgba(224, 108, 117, .45); }
+    .chip { padding: 4px 8px; font-size: 9px; white-space: nowrap; }
+    .chip.active, .segment button.active { border-color: rgba(110, 168, 254, .55); color: var(--blue); background: var(--blue-fill); }
+    .search {
+      width: 190px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 6px 8px;
+      color: var(--fg);
+      background: #0d1014;
+      font-size: 10px;
+    }
+    .search::placeholder { color: #59616d; }
+    .muted { color: var(--muted); }
+    .blue { color: var(--blue); }
+    .green { color: var(--green); }
+    .amber { color: var(--amber); }
+    .red { color: var(--red); }
+    .hidden { display: none !important; }
+    .empty { padding: 42px 16px; text-align: center; color: var(--muted); }
+
+    /* Shared detail/prompt language */
+    .detail-card { height: 100%; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
+    .detail-head { display: flex; align-items: center; justify-content: space-between; height: 52px; border-bottom: 1px solid var(--border); padding: 0 14px; }
+    .breadcrumb { font-size: 13px; font-weight: 800; }
+    .breadcrumb span { color: #59626e; padding: 0 5px; }
+    .detail-meta { color: var(--muted); font-size: 9px; }
+    .prompt-body { display: grid; grid-template-columns: minmax(0, 1fr) 160px; height: calc(100% - 52px); }
+    .prompt-editor { min-width: 0; overflow: auto; padding: 17px; }
+    .prompt-tools { border-left: 1px solid var(--border); padding: 14px; background: rgba(11, 13, 16, .4); }
+    .xml-tag { margin-bottom: 10px; color: var(--blue); font-size: 11px; }
+    .code-line { height: 7px; margin: 8px 0; border-radius: 2px; background: #2a3038; }
+    .code-line.light { background: #353c46; }
+    .code-line.blue-line { background: rgba(110, 168, 254, .26); }
+    .code-line.w92 { width: 92%; } .code-line.w84 { width: 84%; } .code-line.w73 { width: 73%; }
+    .code-line.w64 { width: 64%; } .code-line.w51 { width: 51%; } .code-line.w38 { width: 38%; }
+    .prompt-section { margin-bottom: 23px; }
+    .tool-block { margin-top: 11px; border-top: 1px solid var(--border); padding-top: 11px; }
+    .tool-row { display: flex; justify-content: space-between; margin: 8px 0; color: var(--muted); font-size: 9px; }
+
+    /* Option 1 */
+    .tree-sidebar { display: flex; width: 270px; flex: 0 0 270px; flex-direction: column; border-right: 1px solid var(--border); background: var(--card); }
+    .side-brand { border-bottom: 1px solid var(--border); padding: 13px 15px 12px; }
+    .side-brand .brand-small { margin-top: 2px; }
+    .tree-label { display: flex; align-items: center; justify-content: space-between; padding: 11px 12px 6px; }
+    .project-tree { min-height: 0; flex: 1; overflow-y: auto; padding: 0 8px 8px; }
+    .tree-project { margin-bottom: 3px; border: 1px solid transparent; border-radius: var(--radius); }
+    .tree-project[open] { border-color: var(--border); background: rgba(11, 13, 16, .28); }
+    .tree-project summary { list-style: none; }
+    .tree-project summary::-webkit-details-marker { display: none; }
+    .project-summary {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 35px;
+      padding: 6px 7px;
+      cursor: pointer;
+    }
+    .chevron { width: 8px; color: #5e6671; font-size: 9px; transition: transform .14s; }
+    details[open] > summary .chevron { transform: rotate(90deg); }
+    .project-name { min-width: 0; flex: 1; overflow: hidden; font-size: 10px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+    .trace-link { color: var(--muted); font-size: 8px; text-decoration: none; text-transform: uppercase; }
+    .trace-link:hover { color: var(--blue); }
+    .icon-action { width: 19px; height: 19px; padding: 0; font-size: 9px; line-height: 17px; }
+    .agent-children { border-top: 1px solid rgba(38, 43, 51, .72); padding: 4px; }
+    .agent-item {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid transparent;
+      border-radius: 2px;
+      padding: 7px 8px 7px 20px;
+      color: var(--muted);
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
+    .agent-item:hover { color: var(--fg); background: rgba(139, 147, 161, .06); }
+    .agent-item.selected { border-color: rgba(110, 168, 254, .5); color: var(--fg); background: var(--blue-fill); }
+    .agent-copy { min-width: 0; }
+    .agent-copy strong { display: block; overflow: hidden; color: inherit; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .agent-copy small { display: block; overflow: hidden; color: #6f7783; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+    .side-footer { display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding: 10px 12px; color: var(--muted); font-size: 8px; text-transform: uppercase; }
+    .option1-main { padding: 14px; }
+
+    /* Option 2 */
+    .icon-rail { display: flex; width: 48px; flex: 0 0 48px; flex-direction: column; align-items: center; border-right: 1px solid var(--border); background: var(--card); }
+    .rail-mark { display: grid; width: 100%; height: 52px; place-items: center; border-bottom: 1px solid var(--border); color: var(--blue); font-size: 14px; }
+    .rail-nav { display: flex; flex: 1; flex-direction: column; gap: 7px; padding-top: 10px; }
+    .rail-button { position: relative; width: 33px; height: 33px; padding: 0; border-color: transparent; font-size: 16px; }
+    .rail-button:hover { background: rgba(139, 147, 161, .06); }
+    .rail-button.active { border-color: rgba(110, 168, 254, .42); color: var(--blue); background: var(--blue-fill); }
+    .rail-button::after {
+      position: absolute;
+      left: 41px;
+      top: 7px;
+      z-index: 4;
+      display: none;
+      border: 1px solid var(--border);
+      padding: 2px 5px;
+      color: var(--fg);
+      background: var(--card);
+      content: attr(data-label);
+      font-size: 8px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .rail-button:hover::after { display: block; }
+    .global-shell { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+    .global-title { display: flex; align-items: baseline; gap: 9px; }
+    .view-count { color: var(--muted); font-size: 9px; }
+    .global-content { min-height: 0; flex: 1; overflow: auto; padding: 14px 16px; }
+    .filter-row { display: flex; align-items: center; gap: 5px; margin-bottom: 11px; }
+    .filter-row .search { margin-left: auto; }
+    .data-table { width: 100%; border-collapse: collapse; border: 1px solid var(--border); background: var(--card); font-size: 9px; }
+    .data-table th {
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      background: #0f1216;
+      font-size: 8px;
+      letter-spacing: .1em;
+      text-align: left;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .data-table td { height: 33px; padding: 6px 10px; border-bottom: 1px solid rgba(38, 43, 51, .72); }
+    .data-table tbody tr { cursor: pointer; }
+    .data-table tbody tr:hover { background: rgba(139, 147, 161, .045); }
+    .data-table .selected-row { background: var(--blue-fill); }
+    .status-cell { display: flex; align-items: center; gap: 6px; }
+    .sort-button { border: 0; padding: 0; color: inherit; background: none; cursor: pointer; font-size: inherit; font-weight: inherit; letter-spacing: inherit; text-transform: inherit; }
+    .project-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .project-card { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
+    .project-card-head { display: flex; align-items: center; gap: 8px; padding: 11px; border-bottom: 1px solid var(--border); }
+    .project-card-head strong { min-width: 0; flex: 1; font-size: 11px; }
+    .project-card-body { padding: 10px 11px; color: var(--muted); font-size: 9px; line-height: 1.8; }
+    .project-card-actions { display: flex; gap: 6px; border-top: 1px solid var(--border); padding: 8px 11px; }
+
+    /* Option 3 */
+    .context-shell { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+    .context-topbar { position: relative; justify-content: flex-start; gap: 10px; }
+    .project-dropdown { position: relative; }
+    .dropdown-trigger { min-width: 170px; text-align: left; }
+    .dropdown-menu {
+      position: absolute;
+      z-index: 10;
+      top: 32px;
+      left: 0;
+      width: 210px;
+      border: 1px solid #353c46;
+      border-radius: var(--radius);
+      padding: 4px;
+      background: #12161b;
+      box-shadow: 0 14px 32px rgba(0, 0, 0, .42);
+    }
+    .dropdown-item { display: flex; width: 100%; align-items: center; gap: 8px; border: 0; border-radius: 2px; padding: 8px; color: var(--muted); background: transparent; text-align: left; cursor: pointer; }
+    .dropdown-item:hover, .dropdown-item.active { color: var(--fg); background: var(--blue-fill); }
+    .dropdown-item span:nth-child(2) { flex: 1; }
+    .segment { display: inline-flex; gap: 2px; }
+    .segment button { min-width: 68px; padding: 5px 8px; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .context-area { display: flex; min-height: 0; flex: 1; }
+    .agent-sidebar { width: 218px; flex: 0 0 218px; border-right: 1px solid var(--border); padding: 12px 8px; background: rgba(18, 21, 26, .82); }
+    .agent-sidebar-head { padding: 0 6px 8px; border-bottom: 1px solid var(--border); }
+    .agent-sidebar .agent-item { margin-top: 5px; padding-left: 8px; }
+    .context-detail { min-width: 0; flex: 1; padding: 14px; }
+    .trace-preview { height: 100%; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
+    .trace-preview .table-head { padding: 14px; border-bottom: 1px solid var(--border); }
+
+    /* Traces */
+    .traces-shell { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+    .trace-toolbar { display: flex; align-items: center; gap: 10px; height: 54px; border-bottom: 1px solid var(--border); padding: 0 16px; background: rgba(18, 21, 26, .58); }
+    .trace-toolbar h3 { margin: 0; font-size: 12px; }
+    .trace-toolbar .segment { margin-left: auto; }
+    .trace-content { min-height: 0; flex: 1; overflow: auto; padding: 14px 16px; }
+    .trace-list { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--card); }
+    .trace-group + .trace-group { border-top: 1px solid var(--border); }
+    .trace-row { display: flex; align-items: center; min-height: 43px; padding: 7px 12px; border-bottom: 1px solid rgba(38, 43, 51, .7); }
+    .trace-row:last-child { border-bottom: 0; }
+    .trace-row:hover { background: rgba(139, 147, 161, .04); }
+    .trace-row-main { min-width: 0; flex: 1; }
+    .trace-row-title { display: flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 800; }
+    .trace-row-meta { margin-top: 2px; color: var(--muted); font-size: 9px; }
+    .expand-trace { width: 20px; margin-right: 5px; border: 0; color: #69717d; background: transparent; cursor: pointer; }
+    .trace-children { background: rgba(11, 13, 16, .38); }
+    .trace-children .trace-row { min-height: 37px; padding-left: 47px; }
+    .trace-group-header { padding: 7px 12px; border-bottom: 1px solid var(--border); color: var(--blue); background: #0e1115; font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .trace-stats { display: flex; gap: 15px; color: var(--muted); font-size: 9px; }
+    .trace-footnote { margin: 10px 1px 0; color: #68717e; font-size: 9px; }
+    .trace-footnote code { color: var(--blue); }
+
+    @media (max-width: 900px) {
+      .browser { overflow-x: auto; }
+      .page-header, main, .anchor-nav, .page-footer { width: calc(100% - 24px); }
+      .direction { padding-top: 52px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <p class="eyebrow">Product exploration / local development</p>
+    <h1>Observatory — sidebar UX directions</h1>
+    <p class="context">Three navigation candidates + trace segmentation · draft 2026-08-07</p>
+  </header>
+
+  <div class="anchor-wrap">
+    <nav class="anchor-nav" aria-label="Mockup sections">
+      <a href="#option-1">Option 1</a>
+      <a href="#option-2">Option 2</a>
+      <a href="#option-3">Option 3</a>
+      <a href="#traces">Traces</a>
+    </nav>
+  </div>
+
+  <main>
+    <section class="direction" id="option-1">
+      <div class="direction-head">
+        <h2>Option 1 — Tree sidebar</h2>
+        <span class="badge info">Recommended</span>
+      </div>
+      <p class="description">Projects become collapsible groups and agents become their children, so the hierarchy is visible in one 270px rail. This removes both the repeated AGENTS | TRACES button grid and the second sidebar while keeping lifecycle state close to the project. <strong class="callout">Best balance:</strong> materially less navigation friction without changing Observatory’s project-first mental model.</p>
+
+      <div class="browser" aria-label="Option 1 tree sidebar mockup">
+        <div class="browser-chrome"><div class="chrome-dots"><i class="chrome-dot"></i><i class="chrome-dot"></i><i class="chrome-dot"></i></div><span class="browser-title">localhost:4890 / agents</span></div>
+        <div class="app">
+          <aside class="tree-sidebar">
+            <div class="side-brand"><p class="section-label">Local development</p><div class="brand-small">Observatory</div></div>
+            <div class="tree-label"><span class="section-label">Projects + agents</span><button class="icon-action" title="Refresh projects">↻</button></div>
+            <nav class="project-tree" aria-label="Projects and agents">
+              <details class="tree-project" open>
+                <summary class="project-summary"><span class="chevron">›</span><i class="dot online"></i><span class="project-name">Canvas</span><span class="badge online">Online</span><a class="trace-link" href="#traces">traces</a><button class="icon-action lifecycle-toggle" title="Stop Canvas" data-project="Canvas">■</button></summary>
+                <div class="agent-children">
+                  <button class="agent-item tree-agent" data-project="Canvas" data-agent="layout-editor"><i class="dot valid"></i><span class="agent-copy"><strong>layout-editor</strong><small>layout-editor · layout-editor/medium</small></span></button>
+                  <button class="agent-item tree-agent" data-project="Canvas" data-agent="context-editor"><i class="dot valid"></i><span class="agent-copy"><strong>context-editor</strong><small>context-editor · context-editor/medium</small></span></button>
+                </div>
+              </details>
+              <details class="tree-project">
+                <summary class="project-summary"><span class="chevron">›</span><i class="dot"></i><span class="project-name">Simple Research</span><span class="badge offline">Offline</span><a class="trace-link" href="#traces">traces</a><button class="icon-action lifecycle-toggle" title="Start Simple Research" data-project="Simple Research">▶</button></summary>
+                <div class="agent-children">
+                  <button class="agent-item tree-agent" data-project="Simple Research" data-agent="research-coordinator"><i class="dot valid"></i><span class="agent-copy"><strong>research-coordinator</strong><small>research-coordinator · research-coordinator/medium</small></span></button>
+                  <button class="agent-item tree-agent" data-project="Simple Research" data-agent="source-scout"><i class="dot valid"></i><span class="agent-copy"><strong>source-scout</strong><small>source-scout · source-scout/medium</small></span></button>
+                  <button class="agent-item tree-agent" data-project="Simple Research" data-agent="synthesis-writer"><i class="dot valid"></i><span class="agent-copy"><strong>synthesis-writer</strong><small>synthesis-writer · synthesis-writer/medium</small></span></button>
+                </div>
+              </details>
+              <details class="tree-project">
+                <summary class="project-summary"><span class="chevron">›</span><i class="dot online"></i><span class="project-name">Prompt Kit</span><span class="badge online">Online</span><a class="trace-link" href="#traces">traces</a><button class="icon-action lifecycle-toggle" title="Stop Prompt Kit" data-project="Prompt Kit">■</button></summary>
+                <div class="agent-children">
+                  <button class="agent-item tree-agent" data-project="Prompt Kit" data-agent="prompt-editor"><i class="dot valid"></i><span class="agent-copy"><strong>prompt-editor</strong><small>prompt-editor · prompt-editor/medium</small></span></button>
+                  <button class="agent-item tree-agent" data-project="Prompt Kit" data-agent="context-editor"><i class="dot valid"></i><span class="agent-copy"><strong>context-editor</strong><small>context-editor · context-editor/medium</small></span></button>
+                </div>
+              </details>
+              <details class="tree-project" open>
+                <summary class="project-summary"><span class="chevron">›</span><i class="dot online"></i><span class="project-name">Agent Kernel</span><span class="badge online">Online</span><a class="trace-link" href="#traces">traces</a><button class="icon-action lifecycle-toggle" title="Stop Agent Kernel" data-project="Agent Kernel">■</button></summary>
+                <div class="agent-children">
+                  <button class="agent-item tree-agent" data-project="Agent Kernel" data-agent="context-editor"><i class="dot valid"></i><span class="agent-copy"><strong>context-editor</strong><small>context-editor · context-editor/medium</small></span></button>
+                  <button class="agent-item tree-agent selected" data-project="Agent Kernel" data-agent="docs-writer"><i class="dot valid"></i><span class="agent-copy"><strong>docs-writer</strong><small>docs-writer · docs-writer/medium</small></span></button>
+                </div>
+              </details>
+            </nav>
+            <div class="side-footer"><span>API :4890</span><span>4 projects · 9 agents</span></div>
+          </aside>
+          <div class="app-main option1-main">
+            <div class="detail-card">
+              <div class="detail-head"><div><div class="breadcrumb" id="tree-breadcrumb">Agent Kernel <span>/</span> docs-writer</div><div class="detail-meta">Prompt lab · writable workspace</div></div><span class="badge online">Valid</span></div>
+              <div class="prompt-body">
+                <div class="prompt-editor">
+                  <div class="prompt-section"><p class="section-label">Purpose</p><div class="xml-tag">&lt;purpose&gt;</div><div class="code-line light w92"></div><div class="code-line w84"></div><div class="code-line w64"></div></div>
+                  <div class="prompt-section"><p class="section-label">Workflow</p><div class="code-line blue-line w38"></div><div class="code-line light w92"></div><div class="code-line w73"></div><div class="code-line w84"></div><div class="code-line w51"></div></div>
+                  <div class="prompt-section"><p class="section-label">Rules</p><div class="code-line light w84"></div><div class="code-line w92"></div><div class="code-line w64"></div><div class="code-line w73"></div></div>
+                </div>
+                <aside class="prompt-tools"><p class="section-label">Prompt settings</p><div class="tool-block"><div class="tool-row"><span>Model</span><span class="blue">medium</span></div><div class="tool-row"><span>Temperature</span><span>0.2</span></div><div class="tool-row"><span>Tools</span><span>6</span></div></div><div class="tool-block"><button class="button">Preview prompt</button></div></aside>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="direction" id="option-2">
+      <div class="direction-head"><h2>Option 2 — Flat global views, project = filter</h2></div>
+      <p class="description">Agents and traces become global inventories; project is a filter chip and a column instead of the top-level navigation boundary. Project lifecycle controls move into a dedicated Projects view. <strong>Best at scale and easiest to scan across harnesses,</strong> but it is the biggest rebuild and deliberately demotes lifecycle management.</p>
+
+      <div class="browser" aria-label="Option 2 flat global views mockup">
+        <div class="browser-chrome"><div class="chrome-dots"><i class="chrome-dot"></i><i class="chrome-dot"></i><i class="chrome-dot"></i></div><span class="browser-title">localhost:4890 / global-agents</span></div>
+        <div class="app">
+          <aside class="icon-rail">
+            <div class="rail-mark">◎</div>
+            <nav class="rail-nav" aria-label="Global views">
+              <button class="rail-button global-tab active" data-view="agents" data-label="Agents" aria-pressed="true">⬢</button>
+              <button class="rail-button global-tab" data-view="traces" data-label="Traces" aria-pressed="false">≋</button>
+              <button class="rail-button global-tab" data-view="projects" data-label="Projects" aria-pressed="false">▤</button>
+            </nav>
+            <div class="rail-mark muted">⚙</div>
+          </aside>
+          <div class="global-shell">
+            <header class="app-topbar"><div class="global-title"><span class="brand-small">Observatory</span><span class="view-count" id="global-view-count">9 agents across 4 projects</span></div><span class="top-meta">Local · :4890</span></header>
+            <div class="global-content">
+              <section class="global-panel" data-panel="agents">
+                <div class="filter-row" id="agent-filters"><span class="section-label">Project</span><button class="chip active" data-project="All">All</button><button class="chip" data-project="Canvas">Canvas</button><button class="chip" data-project="Simple Research">Simple Research</button><button class="chip" data-project="Prompt Kit">Prompt Kit</button><button class="chip" data-project="Agent Kernel">Agent Kernel</button><input class="search" id="agent-search" type="search" placeholder="Search 9 agents…" aria-label="Search agents"></div>
+                <table class="data-table" id="agents-table">
+                  <thead><tr><th>Agent</th><th><button class="sort-button" id="sort-agents-project">Project ↕</button></th><th>Model</th><th>Host</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <tr data-project="Canvas" data-agent="layout-editor"><td><strong>layout-editor</strong></td><td>Canvas</td><td>layout-editor/medium</td><td>127.0.0.1:4820</td><td><span class="status-cell"><i class="dot online"></i>valid</span></td></tr>
+                    <tr data-project="Canvas" data-agent="context-editor"><td><strong>context-editor</strong></td><td>Canvas</td><td>context-editor/medium</td><td>127.0.0.1:4820</td><td><span class="status-cell"><i class="dot online"></i>valid</span></td></tr>
+                    <tr data-project="Simple Research" data-agent="research-coordinator"><td><strong>research-coordinator</strong></td><td>Simple Research</td><td>research-coordinator/medium</td><td class="muted">offline</td><td><span class="status-cell"><i class="dot"></i>unavailable</span></td></tr>
+                    <tr data-project="Simple Research" data-agent="source-scout"><td><strong>source-scout</strong></td><td>Simple Research</td><td>source-scout/medium</td><td class="muted">offline</td><td><span class="status-cell"><i class="dot"></i>unavailable</span></td></tr>
+                    <tr data-project="Simple Research" data-agent="synthesis-writer"><td><strong>synthesis-writer</strong></td><td>Simple Research</td><td>synthesis-writer/medium</td><td class="muted">offline</td><td><span class="status-cell"><i class="dot"></i>unavailable</span></td></tr>
+                    <tr data-project="Prompt Kit" data-agent="prompt-editor"><td><strong>prompt-editor</strong></td><td>Prompt Kit</td><td>prompt-editor/medium</td><td>127.0.0.1:4850</td><td><span class="status-cell"><i class="dot online"></i>valid</span></td></tr>
+                    <tr data-project="Prompt Kit" data-agent="context-editor"><td><strong>context-editor</strong></td><td>Prompt Kit</td><td>context-editor/medium</td><td>127.0.0.1:4850</td><td><span class="status-cell"><i class="dot online"></i>valid</span></td></tr>
+                    <tr data-project="Agent Kernel" data-agent="context-editor"><td><strong>context-editor</strong></td><td>Agent Kernel</td><td>context-editor/medium</td><td>127.0.0.1:4860</td><td><span class="status-cell"><i class="dot online"></i>valid</span></td></tr>
+                    <tr class="selected-row" data-project="Agent Kernel" data-agent="docs-writer"><td><strong>docs-writer</strong></td><td>Agent Kernel</td><td>docs-writer/medium</td><td>127.0.0.1:4860</td><td><span class="status-cell"><i class="dot online"></i>valid</span></td></tr>
+                  </tbody>
+                </table>
+                <div class="empty hidden" id="agents-empty">No agents match this filter.</div>
+              </section>
+
+              <section class="global-panel hidden" data-panel="traces">
+                <div class="filter-row" id="global-trace-filters"><span class="section-label">Project</span><button class="chip active" data-project="All">All</button><button class="chip" data-project="Canvas">Canvas</button><button class="chip" data-project="Simple Research">Simple Research</button><button class="chip" data-project="Prompt Kit">Prompt Kit</button><button class="chip" data-project="Agent Kernel">Agent Kernel</button></div>
+                <table class="data-table" id="global-traces-table">
+                  <thead><tr><th>Session / run</th><th>Project</th><th>Agents</th><th>Events</th><th>Updated</th></tr></thead>
+                  <tbody>
+                    <tr data-project="Canvas"><td><strong>Canvas layout session</strong></td><td>Canvas</td><td>layout-editor +2</td><td>214</td><td>14:02</td></tr>
+                    <tr data-project="Canvas"><td><strong>Homepage refinement</strong></td><td>Canvas</td><td>context-editor</td><td>96</td><td>12:41</td></tr>
+                    <tr data-project="Simple Research"><td><strong>Battery supply scan</strong></td><td>Simple Research</td><td>research-coordinator +2</td><td>488</td><td>Aug 05</td></tr>
+                    <tr data-project="Prompt Kit"><td><strong>Prompt lint pass</strong></td><td>Prompt Kit</td><td>prompt-editor</td><td>133</td><td>yesterday</td></tr>
+                    <tr data-project="Agent Kernel"><td><strong>docs-writer</strong> <span class="badge tui">TUI</span></td><td>Agent Kernel</td><td>docs-writer</td><td>72</td><td>11:10</td></tr>
+                    <tr data-project="Agent Kernel"><td><strong>context-editor</strong> <span class="badge tui">TUI</span></td><td>Agent Kernel</td><td>context-editor</td><td>340</td><td>yesterday</td></tr>
+                  </tbody>
+                </table>
+              </section>
+
+              <section class="global-panel hidden" data-panel="projects">
+                <div class="project-grid">
+                  <article class="project-card"><div class="project-card-head"><i class="dot online"></i><strong>Canvas</strong><span class="badge online">Online</span></div><div class="project-card-body">2 agents · API 127.0.0.1:4820<br>Managed process · pid 48211</div><div class="project-card-actions"><button class="button danger project-action">Stop</button><button class="button">Logs</button></div></article>
+                  <article class="project-card"><div class="project-card-head"><i class="dot"></i><strong>Simple Research</strong><span class="badge offline">Offline</span></div><div class="project-card-body">3 agents · persisted traces available<br>Last seen Aug 05, 16:22</div><div class="project-card-actions"><button class="button project-action">Start</button><button class="button">Logs</button></div></article>
+                  <article class="project-card"><div class="project-card-head"><i class="dot online"></i><strong>Prompt Kit</strong><span class="badge online">Online</span></div><div class="project-card-body">2 agents · API 127.0.0.1:4850<br>Managed process · pid 48702</div><div class="project-card-actions"><button class="button danger project-action">Stop</button><button class="button">Logs</button></div></article>
+                  <article class="project-card"><div class="project-card-head"><i class="dot online"></i><strong>Agent Kernel</strong><span class="badge online">Online</span></div><div class="project-card-body">2 agents · API 127.0.0.1:4860<br>Managed process · pid 48890</div><div class="project-card-actions"><button class="button danger project-action">Stop</button><button class="button">Logs</button></div></article>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="direction" id="option-3">
+      <div class="direction-head"><h2>Option 3 — Project dropdown + single contextual sidebar</h2></div>
+      <p class="description">A project picker moves into the header and the one remaining sidebar shows agents for only that project; AGENTS / TRACES stays as a local segment. This is the cheapest change and removes the double-sidebar layout. <strong>Weakest fix:</strong> agents in the other three projects remain hidden until the operator changes context.</p>
+
+      <div class="browser" aria-label="Option 3 contextual sidebar mockup">
+        <div class="browser-chrome"><div class="chrome-dots"><i class="chrome-dot"></i><i class="chrome-dot"></i><i class="chrome-dot"></i></div><span class="browser-title">localhost:4890 / project / agent-kernel</span></div>
+        <div class="app">
+          <div class="context-shell">
+            <header class="app-topbar context-topbar">
+              <span class="brand-small">Observatory</span>
+              <div class="project-dropdown">
+                <button class="button dropdown-trigger" id="project-dropdown-trigger" aria-expanded="false">Agent Kernel ▾</button>
+                <div class="dropdown-menu hidden" id="project-dropdown-menu">
+                  <button class="dropdown-item" data-project="Canvas"><i class="dot online"></i><span>Canvas</span><span class="badge online">Online</span></button>
+                  <button class="dropdown-item" data-project="Simple Research"><i class="dot"></i><span>Simple Research</span><span class="badge offline">Offline</span></button>
+                  <button class="dropdown-item" data-project="Prompt Kit"><i class="dot online"></i><span>Prompt Kit</span><span class="badge online">Online</span></button>
+                  <button class="dropdown-item active" data-project="Agent Kernel"><i class="dot online"></i><span>Agent Kernel</span><span class="badge online">Online</span></button>
+                </div>
+              </div>
+              <div class="segment" id="context-segment"><button class="active" data-view="agents">Agents</button><button data-view="traces">Traces</button></div>
+              <span class="top-meta" style="margin-left:auto">Local · :4890</span>
+            </header>
+            <div class="context-area" id="context-agents-view">
+              <aside class="agent-sidebar">
+                <div class="agent-sidebar-head"><p class="section-label" id="context-agent-title">Agent Kernel agents</p><span class="muted" id="context-agent-count">2 registered</span></div>
+                <div id="context-agent-list"></div>
+              </aside>
+              <div class="context-detail">
+                <div class="detail-card">
+                  <div class="detail-head"><div><div class="breadcrumb" id="context-breadcrumb">Agent Kernel <span>/</span> docs-writer</div><div class="detail-meta">Prompt lab · writable workspace</div></div><span class="badge online" id="context-validity">Valid</span></div>
+                  <div class="prompt-body"><div class="prompt-editor"><div class="prompt-section"><p class="section-label">Purpose</p><div class="xml-tag">&lt;purpose&gt;</div><div class="code-line light w92"></div><div class="code-line w73"></div><div class="code-line w51"></div></div><div class="prompt-section"><p class="section-label">Workflow</p><div class="code-line blue-line w38"></div><div class="code-line light w84"></div><div class="code-line w92"></div><div class="code-line w64"></div></div><div class="prompt-section"><p class="section-label">Rules</p><div class="code-line light w73"></div><div class="code-line w92"></div><div class="code-line w51"></div></div></div><aside class="prompt-tools"><p class="section-label">Project context</p><div class="tool-block"><div class="tool-row"><span>Lifecycle</span><span class="green" id="context-lifecycle">Online</span></div><div class="tool-row"><span>Mode</span><span>writable</span></div></div></aside></div>
+                </div>
+              </div>
+            </div>
+            <div class="workspace hidden" id="context-traces-view">
+              <div class="trace-preview"><div class="table-head"><p class="section-label" id="context-trace-title">Agent Kernel traces</p><p class="muted">Persisted sessions and standalone TUI runs for the selected project.</p></div><div id="context-trace-list"><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">docs-writer <span class="badge tui">TUI</span></div><div class="trace-row-meta">72 events · 11:10</div></div></div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">context-editor <span class="badge tui">TUI</span></div><div class="trace-row-meta">340 events · yesterday</div></div></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="direction" id="traces">
+      <div class="direction-head"><h2>Trace segmentation — sessions, runs, and one-shots</h2></div>
+      <p class="description">Container sessions become expandable parents, so a multi-agent workflow reads as one event with its runs nested underneath. Standalone TUI runs have no containing session, so they stay at the top level under their agent name. Switching to agent grouping answers the inverse question: what has this agent done across sessions?</p>
+
+      <div class="browser" aria-label="Trace segmentation mockup">
+        <div class="browser-chrome"><div class="chrome-dots"><i class="chrome-dot"></i><i class="chrome-dot"></i><i class="chrome-dot"></i></div><span class="browser-title">localhost:4890 / traces</span></div>
+        <div class="app">
+          <div class="traces-shell">
+            <header class="trace-toolbar"><div><h3>All traces</h3><span class="muted">6 sessions / standalone runs · 1,443 events</span></div><div class="segment" id="trace-group-segment"><span class="section-label" style="align-self:center;margin-right:3px">Group by:</span><button class="active" data-mode="session">Session</button><button data-mode="agent">Agent</button><button data-mode="none">None</button></div></header>
+            <div class="trace-content">
+              <div id="trace-mode-session">
+                <div class="trace-list">
+                  <div class="trace-group">
+                    <div class="trace-row"><button class="expand-trace" data-target="canvas-layout-children" aria-expanded="true">⌄</button><div class="trace-row-main"><div class="trace-row-title">Canvas layout session <span class="badge online">Complete</span></div><div class="trace-row-meta">3 runs · 214 events · 14:02</div></div><div class="trace-stats"><span>Canvas</span><span>session c-42f1</span></div></div>
+                    <div class="trace-children" id="canvas-layout-children"><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">layout-editor</div><div class="trace-row-meta">41 events · 13:48</div></div><span class="muted">run 01</span></div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">context-editor</div><div class="trace-row-meta">98 events · 13:53</div></div><span class="muted">run 02</span></div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">layout-editor</div><div class="trace-row-meta">75 events · 14:02</div></div><span class="muted">run 03</span></div></div>
+                  </div>
+                  <div class="trace-group">
+                    <div class="trace-row"><button class="expand-trace" data-target="canvas-home-children" aria-expanded="false">›</button><div class="trace-row-main"><div class="trace-row-title">Canvas homepage refinement <span class="badge online">Complete</span></div><div class="trace-row-meta">2 runs · 96 events · 12:41</div></div><div class="trace-stats"><span>Canvas</span><span>session c-3a90</span></div></div>
+                    <div class="trace-children hidden" id="canvas-home-children"><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">context-editor</div><div class="trace-row-meta">52 events · 12:34</div></div></div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">layout-editor</div><div class="trace-row-meta">44 events · 12:41</div></div></div></div>
+                  </div>
+                  <div class="trace-group"><div class="trace-row"><span style="width:25px"></span><div class="trace-row-main"><div class="trace-row-title">docs-writer <span class="badge tui">TUI</span></div><div class="trace-row-meta">72 events · 11:10</div></div><div class="trace-stats"><span>Agent Kernel</span><span>standalone run</span></div></div></div>
+                  <div class="trace-group"><div class="trace-row"><span style="width:25px"></span><div class="trace-row-main"><div class="trace-row-title">context-editor <span class="badge tui">TUI</span></div><div class="trace-row-meta">340 events · yesterday</div></div><div class="trace-stats"><span>Agent Kernel</span><span>standalone run</span></div></div></div>
+                  <div class="trace-group"><div class="trace-row"><button class="expand-trace" data-target="research-children" aria-expanded="false">›</button><div class="trace-row-main"><div class="trace-row-title">Battery supply scan <span class="badge online">Complete</span></div><div class="trace-row-meta">3 runs · 488 events · Aug 05</div></div><div class="trace-stats"><span>Simple Research</span><span>persisted</span></div></div><div class="trace-children hidden" id="research-children"><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">research-coordinator</div><div class="trace-row-meta">132 events</div></div></div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">source-scout</div><div class="trace-row-meta">201 events</div></div></div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">synthesis-writer</div><div class="trace-row-meta">155 events</div></div></div></div></div>
+                  <div class="trace-group"><div class="trace-row"><button class="expand-trace" data-target="prompt-children" aria-expanded="false">›</button><div class="trace-row-main"><div class="trace-row-title">Prompt lint pass <span class="badge online">Complete</span></div><div class="trace-row-meta">1 run · 133 events · yesterday</div></div><div class="trace-stats"><span>Prompt Kit</span><span>session p-7b32</span></div></div><div class="trace-children hidden" id="prompt-children"><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">prompt-editor</div><div class="trace-row-meta">133 events</div></div></div></div></div>
+                </div>
+              </div>
+
+              <div class="hidden" id="trace-mode-agent">
+                <div class="trace-list">
+                  <div class="trace-group"><div class="trace-group-header">context-editor · 3 runs · 490 events</div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">Canvas layout session</div><div class="trace-row-meta">98 events · 13:53</div></div><span>Canvas</span></div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">Canvas homepage refinement</div><div class="trace-row-meta">52 events · 12:34</div></div><span>Canvas</span></div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">context-editor <span class="badge tui">TUI</span></div><div class="trace-row-meta">340 events · yesterday</div></div><span>Agent Kernel</span></div></div>
+                  <div class="trace-group"><div class="trace-group-header">layout-editor · 3 runs · 160 events</div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">Canvas layout session / run 01</div><div class="trace-row-meta">41 events · 13:48</div></div><span>Canvas</span></div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">Canvas layout session / run 03</div><div class="trace-row-meta">75 events · 14:02</div></div><span>Canvas</span></div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">Canvas homepage refinement</div><div class="trace-row-meta">44 events · 12:41</div></div><span>Canvas</span></div></div>
+                  <div class="trace-group"><div class="trace-group-header">docs-writer · 1 run · 72 events</div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">docs-writer <span class="badge tui">TUI</span></div><div class="trace-row-meta">72 events · 11:10</div></div><span>Agent Kernel</span></div></div>
+                  <div class="trace-group"><div class="trace-group-header">research-coordinator · 1 run · 132 events</div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">Battery supply scan</div><div class="trace-row-meta">132 events · Aug 05</div></div><span>Simple Research</span></div></div>
+                  <div class="trace-group"><div class="trace-group-header">source-scout · 1 run · 201 events</div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">Battery supply scan</div><div class="trace-row-meta">201 events · Aug 05</div></div><span>Simple Research</span></div></div>
+                  <div class="trace-group"><div class="trace-group-header">synthesis-writer · 1 run · 155 events</div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">Battery supply scan</div><div class="trace-row-meta">155 events · Aug 05</div></div><span>Simple Research</span></div></div>
+                  <div class="trace-group"><div class="trace-group-header">prompt-editor · 1 run · 133 events</div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">Prompt lint pass</div><div class="trace-row-meta">133 events · yesterday</div></div><span>Prompt Kit</span></div></div>
+                </div>
+              </div>
+
+              <div class="hidden" id="trace-mode-none">
+                <div class="trace-list"><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">layout-editor · Canvas layout session</div><div class="trace-row-meta">41 events · 13:48</div></div><span>Canvas</span></div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">context-editor · Canvas layout session</div><div class="trace-row-meta">98 events · 13:53</div></div><span>Canvas</span></div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">layout-editor · Canvas layout session</div><div class="trace-row-meta">75 events · 14:02</div></div><span>Canvas</span></div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">docs-writer <span class="badge tui">TUI</span></div><div class="trace-row-meta">72 events · 11:10</div></div><span>Agent Kernel</span></div><div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">context-editor <span class="badge tui">TUI</span></div><div class="trace-row-meta">340 events · yesterday</div></div><span>Agent Kernel</span></div></div>
+              </div>
+              <p class="trace-footnote">Implementation note: requires adding <code>agentNames</code> to the trace-session summary API.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="page-footer">STATIC PRODUCT EXPLORATION · NO NETWORK REQUESTS · INTERACTIONS ARE LOCAL TO THIS FILE</footer>
+
+  <script>
+    (() => {
+      const q = (selector, root = document) => root.querySelector(selector);
+      const qa = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+      // Option 1: selecting a child demonstrates the single navigation surface.
+      qa('.tree-agent').forEach((button) => {
+        button.addEventListener('click', () => {
+          qa('.tree-agent').forEach((item) => item.classList.remove('selected'));
+          button.classList.add('selected');
+          q('#tree-breadcrumb').innerHTML = `${button.dataset.project} <span>/</span> ${button.dataset.agent}`;
+        });
+      });
+      qa('.lifecycle-toggle').forEach((button) => {
+        button.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const summary = button.closest('.project-summary');
+          const dot = q('.dot', summary);
+          const badge = q('.badge', summary);
+          const online = badge.textContent.trim() === 'Online';
+          dot.classList.toggle('online', !online);
+          badge.className = `badge ${online ? 'offline' : 'online'}`;
+          badge.textContent = online ? 'Offline' : 'Online';
+          button.textContent = online ? '▶' : '■';
+          button.title = `${online ? 'Start' : 'Stop'} ${button.dataset.project}`;
+        });
+      });
+      qa('.trace-link').forEach((link) => link.addEventListener('click', (event) => event.stopPropagation()));
+
+      // Option 2: global view tabs, project filters, search, and project sort.
+      const viewCopy = {
+        agents: '9 agents across 4 projects',
+        traces: '6 trace groups across 4 projects',
+        projects: '3 online · 1 offline'
+      };
+      qa('.global-tab').forEach((button) => {
+        button.addEventListener('click', () => {
+          qa('.global-tab').forEach((tab) => { tab.classList.remove('active'); tab.setAttribute('aria-pressed', 'false'); });
+          button.classList.add('active');
+          button.setAttribute('aria-pressed', 'true');
+          qa('.global-panel').forEach((panel) => panel.classList.toggle('hidden', panel.dataset.panel !== button.dataset.view));
+          q('#global-view-count').textContent = viewCopy[button.dataset.view];
+        });
+      });
+
+      let agentProject = 'All';
+      const filterAgents = () => {
+        const term = q('#agent-search').value.trim().toLowerCase();
+        let visible = 0;
+        qa('#agents-table tbody tr').forEach((row) => {
+          const matchesProject = agentProject === 'All' || row.dataset.project === agentProject;
+          const matchesSearch = !term || `${row.dataset.agent} ${row.dataset.project}`.toLowerCase().includes(term);
+          const show = matchesProject && matchesSearch;
+          row.classList.toggle('hidden', !show);
+          if (show) visible += 1;
+        });
+        q('#agents-table').classList.toggle('hidden', visible === 0);
+        q('#agents-empty').classList.toggle('hidden', visible !== 0);
+        q('#global-view-count').textContent = `${visible} visible agent${visible === 1 ? '' : 's'}`;
+      };
+      qa('#agent-filters .chip').forEach((chip) => {
+        chip.addEventListener('click', () => {
+          qa('#agent-filters .chip').forEach((item) => item.classList.remove('active'));
+          chip.classList.add('active');
+          agentProject = chip.dataset.project;
+          filterAgents();
+        });
+      });
+      q('#agent-search').addEventListener('input', filterAgents);
+
+      let sortAscending = true;
+      q('#sort-agents-project').addEventListener('click', () => {
+        const body = q('#agents-table tbody');
+        const rows = qa('tr', body).sort((a, b) => {
+          const result = a.dataset.project.localeCompare(b.dataset.project) || a.dataset.agent.localeCompare(b.dataset.agent);
+          return sortAscending ? result : -result;
+        });
+        rows.forEach((row) => body.appendChild(row));
+        sortAscending = !sortAscending;
+        q('#sort-agents-project').textContent = `Project ${sortAscending ? '↓' : '↑'}`;
+      });
+
+      qa('#global-trace-filters .chip').forEach((chip) => {
+        chip.addEventListener('click', () => {
+          qa('#global-trace-filters .chip').forEach((item) => item.classList.remove('active'));
+          chip.classList.add('active');
+          let visible = 0;
+          qa('#global-traces-table tbody tr').forEach((row) => {
+            const show = chip.dataset.project === 'All' || row.dataset.project === chip.dataset.project;
+            row.classList.toggle('hidden', !show);
+            if (show) visible += 1;
+          });
+          q('#global-view-count').textContent = `${visible} visible trace group${visible === 1 ? '' : 's'}`;
+        });
+      });
+      qa('.project-action').forEach((button) => {
+        button.addEventListener('click', () => {
+          const card = button.closest('.project-card');
+          const badge = q('.badge', card);
+          const dot = q('.dot', card);
+          const stopping = button.textContent === 'Stop';
+          badge.textContent = stopping ? 'Offline' : 'Online';
+          badge.className = `badge ${stopping ? 'offline' : 'online'}`;
+          dot.classList.toggle('online', !stopping);
+          button.textContent = stopping ? 'Start' : 'Stop';
+          button.classList.toggle('danger', !stopping);
+        });
+      });
+
+      // Option 3: project dropdown repopulates the contextual agent list.
+      const projectAgents = {
+        'Canvas': ['layout-editor', 'context-editor'],
+        'Simple Research': ['research-coordinator', 'source-scout', 'synthesis-writer'],
+        'Prompt Kit': ['prompt-editor', 'context-editor'],
+        'Agent Kernel': ['context-editor', 'docs-writer']
+      };
+      const projectOnline = { 'Canvas': true, 'Simple Research': false, 'Prompt Kit': true, 'Agent Kernel': true };
+      const contextTraces = {
+        'Canvas': [['Canvas layout session', '3 runs · 214 events · 14:02', ''], ['Homepage refinement', '2 runs · 96 events · 12:41', '']],
+        'Simple Research': [['Battery supply scan', '3 runs · 488 events · Aug 05', '']],
+        'Prompt Kit': [['Prompt lint pass', '1 run · 133 events · yesterday', '']],
+        'Agent Kernel': [['docs-writer', '72 events · 11:10', 'TUI'], ['context-editor', '340 events · yesterday', 'TUI']]
+      };
+      let contextProject = 'Agent Kernel';
+      let contextAgent = 'docs-writer';
+      const renderContextAgents = () => {
+        const agents = projectAgents[contextProject];
+        if (!agents.includes(contextAgent)) contextAgent = agents[0];
+        q('#context-agent-title').textContent = `${contextProject} agents`;
+        q('#context-agent-count').textContent = `${agents.length} registered`;
+        q('#context-breadcrumb').innerHTML = `${contextProject} <span>/</span> ${contextAgent}`;
+        q('#context-lifecycle').textContent = projectOnline[contextProject] ? 'Online' : 'Offline';
+        q('#context-lifecycle').className = projectOnline[contextProject] ? 'green' : 'muted';
+        q('#context-validity').textContent = projectOnline[contextProject] ? 'Valid' : 'Unavailable';
+        q('#context-validity').className = `badge ${projectOnline[contextProject] ? 'online' : 'offline'}`;
+        q('#context-agent-list').innerHTML = agents.map((agent) => `<button class="agent-item context-agent ${agent === contextAgent ? 'selected' : ''}" data-agent="${agent}"><i class="dot ${projectOnline[contextProject] ? 'valid' : ''}"></i><span class="agent-copy"><strong>${agent}</strong><small>${agent} · ${agent}/medium</small></span></button>`).join('');
+        q('#context-trace-list').innerHTML = contextTraces[contextProject].map(([title, meta, badge]) => `<div class="trace-row"><div class="trace-row-main"><div class="trace-row-title">${title} ${badge ? '<span class="badge tui">TUI</span>' : ''}</div><div class="trace-row-meta">${meta}</div></div></div>`).join('');
+        qa('.context-agent').forEach((button) => button.addEventListener('click', () => {
+          contextAgent = button.dataset.agent;
+          renderContextAgents();
+        }));
+      };
+      renderContextAgents();
+      q('#project-dropdown-trigger').addEventListener('click', () => {
+        const menu = q('#project-dropdown-menu');
+        menu.classList.toggle('hidden');
+        q('#project-dropdown-trigger').setAttribute('aria-expanded', String(!menu.classList.contains('hidden')));
+      });
+      qa('.dropdown-item').forEach((button) => {
+        button.addEventListener('click', () => {
+          contextProject = button.dataset.project;
+          contextAgent = contextProject === 'Agent Kernel' ? 'docs-writer' : projectAgents[contextProject][0];
+          q('#project-dropdown-trigger').textContent = `${contextProject} ▾`;
+          qa('.dropdown-item').forEach((item) => item.classList.toggle('active', item === button));
+          q('#project-dropdown-menu').classList.add('hidden');
+          q('#project-dropdown-trigger').setAttribute('aria-expanded', 'false');
+          q('#context-trace-title').textContent = `${contextProject} traces`;
+          renderContextAgents();
+        });
+      });
+      qa('#context-segment button').forEach((button) => {
+        button.addEventListener('click', () => {
+          qa('#context-segment button').forEach((item) => item.classList.remove('active'));
+          button.classList.add('active');
+          q('#context-agents-view').classList.toggle('hidden', button.dataset.view !== 'agents');
+          q('#context-traces-view').classList.toggle('hidden', button.dataset.view !== 'traces');
+        });
+      });
+
+      // Trace segmentation: change grouping and expand/collapse session parents.
+      qa('#trace-group-segment button').forEach((button) => {
+        button.addEventListener('click', () => {
+          qa('#trace-group-segment button').forEach((item) => item.classList.remove('active'));
+          button.classList.add('active');
+          ['session', 'agent', 'none'].forEach((mode) => q(`#trace-mode-${mode}`).classList.toggle('hidden', mode !== button.dataset.mode));
+        });
+      });
+      qa('.expand-trace').forEach((button) => {
+        button.addEventListener('click', () => {
+          const children = document.getElementById(button.dataset.target);
+          const opening = children.classList.contains('hidden');
+          children.classList.toggle('hidden', !opening);
+          button.textContent = opening ? '⌄' : '›';
+          button.setAttribute('aria-expanded', String(opening));
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

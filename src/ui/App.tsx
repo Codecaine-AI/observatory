@@ -16,6 +16,7 @@ import {
 } from "@agent-kernel/viewer-shell";
 
 import {
+  fetchCatalogAgents,
   fetchRegistryProjects,
   launchRegistryProject,
   stopRegistryProject,
@@ -23,12 +24,13 @@ import {
 } from "./api";
 import {
   ProjectSidebar,
-  projectLifecycle,
+  type ObservatoryView,
   type ProjectActionState,
-  type ObservatorySection,
+  type ProjectAgentsState,
 } from "./components/ProjectSidebar";
-import { AgentsPage } from "./pages/AgentsPage";
+import { AgentPage } from "./pages/AgentPage";
 import { TracesPage } from "./pages/TracesPage";
+import { agentPath, projectPath, tracePath, useRoute } from "./router";
 
 const STYLE_CONFIG: StyleSystemConfig = {
   settingsStorageKey: "observatory.viewerStyle.v1",
@@ -44,18 +46,22 @@ type ProjectState =
   | { status: "error"; projects: RegistryProject[]; message: string };
 
 export function App() {
+  const { route, navigate } = useRoute();
   const [projectState, setProjectState] = useState<ProjectState>({
     status: "loading",
     projects: [],
   });
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [section, setSection] = useState<ObservatorySection>("traces");
+  const [catalogs, setCatalogs] = useState<
+    Record<string, ProjectAgentsState | undefined>
+  >({});
+  const [catalogNonce, setCatalogNonce] = useState(0);
   const [projectActions, setProjectActions] = useState<
     Record<string, ProjectActionState | undefined>
   >({});
-  const [styleSettings, setStyleSettings] = useState<StyleSettings>(() =>
-    loadStyleSettings(STYLE_CONFIG),
-  );
+  const [styleSettings] = useState<StyleSettings>(() => ({
+    ...loadStyleSettings(STYLE_CONFIG),
+    theme: "dark",
+  }));
 
   const refreshProjects = useCallback(async (quiet = false) => {
     if (!quiet) {
@@ -67,11 +73,6 @@ export function App() {
     try {
       const projects = await fetchRegistryProjects();
       setProjectState({ status: "ready", projects });
-      setSelectedProjectId((current) =>
-        current && projects.some((project) => project.id === current)
-          ? current
-          : projects[0]?.id ?? null,
-      );
     } catch (cause) {
       setProjectState((current) => ({
         status: "error",
@@ -104,26 +105,104 @@ export function App() {
     return () => window.clearInterval(interval);
   }, [hasStartingProject, refreshProjects]);
 
+  // Agent catalogs feed the sidebar tree. Refetch when a project's liveness
+  // flips (harness came up or went down) or on an explicit refresh.
+  const liveSignature = projectState.projects
+    .map((project) => `${project.id}:${project.live ? 1 : 0}`)
+    .join(",");
+
+  useEffect(() => {
+    if (liveSignature.length === 0) return;
+    const controller = new AbortController();
+    const projects = liveSignature.split(",").map((entry) => {
+      const [id = "", live] = entry.split(":");
+      return { id, live: live === "1" };
+    });
+
+    setCatalogs((current) => {
+      const next: Record<string, ProjectAgentsState | undefined> = {};
+      for (const { id, live } of projects) {
+        next[id] = live
+          ? current[id]?.status === "ready"
+            ? current[id]
+            : { status: "loading" }
+          : { status: "offline" };
+      }
+      return next;
+    });
+
+    for (const { id, live } of projects) {
+      if (!live) continue;
+      void fetchCatalogAgents(id, controller.signal)
+        .then((body) => {
+          if (!Array.isArray(body.agents)) {
+            throw new Error("Agent catalog returned an invalid agent list.");
+          }
+          setCatalogs((current) => ({
+            ...current,
+            [id]: { status: "ready", agents: body.agents },
+          }));
+        })
+        .catch((cause: unknown) => {
+          if (controller.signal.aborted) return;
+          setCatalogs((current) => ({
+            ...current,
+            [id]: {
+              status: "error",
+              message:
+                cause instanceof Error ? cause.message : "Agent catalog unavailable.",
+            },
+          }));
+        });
+    }
+    return () => controller.abort();
+  }, [liveSignature, catalogNonce]);
+
   useEffect(() => {
     saveStyleSettings(STYLE_CONFIG, styleSettings);
-    document.documentElement.dataset.theme = styleSettings.theme;
-    document.documentElement.style.colorScheme = styleSettings.theme;
+    document.documentElement.dataset.theme = "dark";
+    document.documentElement.style.colorScheme = "dark";
   }, [styleSettings]);
+
+  // Routing invariants, applied once the registry has answered: "/" lands on
+  // the first project; an unknown project id falls back to "/".
+  useEffect(() => {
+    if (projectState.status !== "ready" || projectState.projects.length === 0) {
+      return;
+    }
+    if (route.kind === "home") {
+      const first = projectState.projects[0];
+      if (first) navigate(projectPath(first.id), { replace: true });
+      return;
+    }
+    const known = projectState.projects.some(
+      (project) => project.id === route.projectId,
+    );
+    if (!known) navigate("/", { replace: true });
+  }, [route, projectState, navigate]);
 
   const activeProject = useMemo(
     () =>
-      projectState.projects.find((project) => project.id === selectedProjectId) ??
-      projectState.projects[0] ??
-      null,
-    [projectState.projects, selectedProjectId],
+      route.kind === "home"
+        ? projectState.projects[0] ?? null
+        : projectState.projects.find(
+            (project) => project.id === route.projectId,
+          ) ?? null,
+    [projectState.projects, route],
   );
 
-  const toggleTheme = useCallback(() => {
-    setStyleSettings((current) => ({
-      ...current,
-      theme: current.theme === "dark" ? "light" : "dark",
-    }));
-  }, []);
+  // An agent page only makes sense while its agent exists in the live
+  // catalog; fall back to the project page when the harness goes down or the
+  // agent disappears.
+  useEffect(() => {
+    if (route.kind !== "agent" || !activeProject) return;
+    const catalog = catalogs[activeProject.id];
+    if (!catalog || catalog.status === "loading") return;
+    const exists =
+      catalog.status === "ready"
+      && catalog.agents.some((agent) => agent.name === route.agentName);
+    if (!exists) navigate(projectPath(activeProject.id), { replace: true });
+  }, [route, activeProject, catalogs, navigate]);
 
   const runProjectAction = useCallback(
     async (projectId: string, kind: "start" | "stop") => {
@@ -162,6 +241,28 @@ export function App() {
     [refreshProjects],
   );
 
+  const view: ObservatoryView =
+    route.kind === "agent"
+      ? { kind: "agent", agentName: route.agentName }
+      : { kind: "traces" };
+
+  const activeCatalog = activeProject ? catalogs[activeProject.id] : undefined;
+  const activeAgent =
+    route.kind === "agent" && activeCatalog?.status === "ready"
+      ? activeCatalog.agents.find((agent) => agent.name === route.agentName)
+        ?? null
+      : null;
+
+  const sectionLabel =
+    route.kind === "agent" ? "agent" : route.kind === "trace" ? "trace" : "traces";
+  const title = activeProject
+    ? route.kind === "agent"
+      ? `${activeProject.name} / ${route.agentName}`
+      : route.kind === "trace"
+        ? `${activeProject.name} / ${route.traceId}`
+        : activeProject.name
+    : "No project selected";
+
   const shellStyle = styleVars(styleSettings, STYLE_CONFIG) as CSSProperties;
 
   return (
@@ -171,18 +272,20 @@ export function App() {
     >
       <ProjectSidebar
         projects={projectState.projects}
+        catalogs={catalogs}
         selectedProjectId={activeProject?.id ?? null}
-        section={section}
-        onSelect={(projectId, nextSection) => {
-          setSelectedProjectId(projectId);
-          setSection(nextSection);
-        }}
+        view={view}
+        onSelectTraces={(projectId) => navigate(projectPath(projectId))}
+        onSelectAgent={(projectId, agentName) =>
+          navigate(agentPath(projectId, agentName))
+        }
         onStart={(projectId) => void runProjectAction(projectId, "start")}
         onStop={(projectId) => void runProjectAction(projectId, "stop")}
         actions={projectActions}
-        theme={styleSettings.theme}
-        onToggleTheme={toggleTheme}
-        onRefresh={() => void refreshProjects()}
+        onRefresh={() => {
+          setCatalogNonce((nonce) => nonce + 1);
+          void refreshProjects();
+        }}
         refreshing={projectState.status === "loading"}
       />
 
@@ -190,21 +293,12 @@ export function App() {
         <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border px-5">
           <div className="min-w-0">
             <p className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              {section}
+              {sectionLabel}
             </p>
             <h2 className="truncate font-display text-[16px] font-bold">
-              {activeProject?.name ?? "No project selected"}
+              {title}
             </h2>
           </div>
-          {activeProject ? (
-            <span
-              className={`ml-auto rounded-[2px] border px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.08em] ${headerBadgeClass(
-                projectLifecycle(activeProject, projectActions[activeProject.id]).tone,
-              )}`}
-            >
-              {projectLifecycle(activeProject, projectActions[activeProject.id]).label}
-            </span>
-          ) : null}
         </header>
 
         <div className="min-h-0 flex-1 overflow-hidden p-4">
@@ -214,31 +308,33 @@ export function App() {
             <CenteredMessage>
               Add a project to registry.json, then refresh.
             </CenteredMessage>
-          ) : section === "agents" ? (
-            <AgentsPage key={activeProject.id} project={activeProject} />
+          ) : route.kind === "agent" && activeAgent ? (
+            <AgentPage
+              key={`${activeProject.id}:${activeAgent.name}`}
+              project={activeProject}
+              agent={activeAgent}
+            />
+          ) : route.kind === "agent" ? (
+            <CenteredMessage>Loading agent…</CenteredMessage>
           ) : (
-            <TracesPage key={activeProject.id} project={activeProject} />
+            <TracesPage
+              key={activeProject.id}
+              project={activeProject}
+              selectedTraceId={route.kind === "trace" ? route.traceId : null}
+              onSelectTrace={(traceId) =>
+                navigate(
+                  traceId
+                    ? tracePath(activeProject.id, traceId)
+                    : projectPath(activeProject.id),
+                )
+              }
+            />
           )}
         </div>
       </main>
       <StyleOverlay settings={styleSettings.grain} />
     </div>
   );
-}
-
-function headerBadgeClass(
-  tone: ReturnType<typeof projectLifecycle>["tone"],
-): string {
-  if (tone === "success") {
-    return "border-status-success-border bg-status-success-fill/30 text-status-success";
-  }
-  if (tone === "warning") {
-    return "border-status-warning-border bg-status-warning-fill/30 text-status-warning";
-  }
-  if (tone === "destructive") {
-    return "border-destructive/40 bg-destructive/10 text-destructive";
-  }
-  return "border-status-neutral-border bg-status-neutral-fill text-status-neutral";
 }
 
 function CenteredMessage({

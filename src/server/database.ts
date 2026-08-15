@@ -14,6 +14,21 @@ import type { KernelTraceReadQuery } from "@agent-kernel/kernel/read-api";
 
 import type { ResolvedRegistryProject } from "./registry";
 
+/**
+ * Container kinds surfaced in the observatory session list.
+ *
+ * The kernel's standard read service already returns kind "session" (which
+ * includes TUI-originated sessions — they carry `metadata.origin: "tui"`).
+ * Every OTHER kind listed here gets its own stats query and is merged into
+ * the same list. To surface a new container kind, add it here rather than
+ * editing the merge logic below.
+ */
+const SESSION_CONTAINER_KINDS: readonly string[] = ["session", "layout-session"];
+
+const EXTRA_SESSION_CONTAINER_KINDS = SESSION_CONTAINER_KINDS.filter(
+  (kind) => kind !== "session",
+);
+
 export class ProjectDatabaseManager {
   readonly #handles = new Map<string, KernelDatabaseHandle>();
   readonly #services = new Map<string, KernelReadApiService>();
@@ -32,14 +47,16 @@ export class ProjectDatabaseManager {
     const service: KernelReadApiService = {
       ...standard,
       async listSessionContainers(query: KernelTraceReadQuery = {}) {
-        const [sessionList, layoutRows] = await Promise.all([
+        const [sessionList, ...extraKindRows] = await Promise.all([
           standard.listSessionContainers(query),
-          listSessionContainersWithStats(handle.db, {
-            kind: "layout-session",
-            limit: query.limit ?? 100,
-          }),
+          ...EXTRA_SESSION_CONTAINER_KINDS.map((kind) =>
+            listSessionContainersWithStats(handle.db, {
+              kind,
+              limit: query.limit ?? 100,
+            }),
+          ),
         ]);
-        const layoutSessions = layoutRows.map(
+        const extraSessions = extraKindRows.flat().map(
           ({
             container,
             piSessionCount,
@@ -78,7 +95,7 @@ export class ProjectDatabaseManager {
         return {
           trace_sessions: [
             ...sessionList.trace_sessions,
-            ...layoutSessions,
+            ...extraSessions,
           ]
             .sort((a, b) =>
               (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""),

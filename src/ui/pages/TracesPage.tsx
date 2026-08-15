@@ -19,6 +19,10 @@ import { useProjectDetailBlockProvider } from "../extensions";
 
 interface TracesPageProps {
   project: RegistryProject;
+  /** Trace opened by the route; null when the list is at rest. */
+  selectedTraceId: string | null;
+  /** Route navigation: a trace id opens `/…/trace/:id`; null returns to the project page. */
+  onSelectTrace: (traceId: string | null) => void;
 }
 
 type SessionState =
@@ -32,12 +36,16 @@ type DetailState =
   | { status: "ready"; detail: KernelTraceSessionDetail }
   | { status: "error"; detail: null; message: string };
 
-export function TracesPage({ project }: TracesPageProps) {
+export function TracesPage({
+  project,
+  selectedTraceId,
+  onSelectTrace,
+}: TracesPageProps) {
   const [sessionState, setSessionState] = useState<SessionState>({
     status: "loading",
     sessions: [],
   });
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedId = selectedTraceId;
   const [detailState, setDetailState] = useState<DetailState>({
     status: "idle",
     detail: null,
@@ -47,7 +55,6 @@ export function TracesPage({ project }: TracesPageProps) {
   useEffect(() => {
     const controller = new AbortController();
     setSessionState({ status: "loading", sessions: [] });
-    setSelectedId(null);
     setDetailState({ status: "idle", detail: null });
 
     void fetchTraceSessions(project.id, controller.signal)
@@ -55,8 +62,8 @@ export function TracesPage({ project }: TracesPageProps) {
         if (!Array.isArray(body.trace_sessions)) {
           throw new Error("Trace API returned an invalid session list.");
         }
-        // No auto-select: landing on All Traces shows the list at rest and
-        // the empty detail state until the human picks a trace.
+        // No auto-select: the project page shows the list at rest; a trace is
+        // opened only by its route (`/:projectId/trace/:traceId`).
         setSessionState({ status: "ready", sessions: body.trace_sessions });
       })
       .catch((cause: unknown) => {
@@ -114,6 +121,7 @@ export function TracesPage({ project }: TracesPageProps) {
         title: session.topic ?? session.label ?? session.id,
         subtitle: traceSubtitle(session),
         status: session.status,
+        badge: sessionOrigin(session),
       })),
     [sessions],
   );
@@ -194,7 +202,8 @@ export function TracesPage({ project }: TracesPageProps) {
           sessionState.status === "loading" ||
           detailState.status === "loading"
         }
-        onSelect={setSelectedId}
+        onSelect={onSelectTrace}
+        onBack={() => onSelectTrace(null)}
         usageData={usageData}
         apiBase={viewerApiPrefix(project.id)}
         labels={{
@@ -206,6 +215,12 @@ export function TracesPage({ project }: TracesPageProps) {
       />
     </div>
   );
+}
+
+/** Origin marker (e.g. "tui") recorded by the ingesting harness. */
+function sessionOrigin(session: KernelTraceSessionSummary): string | undefined {
+  const origin = session.metadata?.["origin"];
+  return typeof origin === "string" && origin.length > 0 ? origin : undefined;
 }
 
 function traceSubtitle(session: KernelTraceSessionSummary): string {

@@ -28,6 +28,14 @@ stay runnable and viewable on their own.
 `registry.json` at repo root, machine-local, gitignored. `registry.example.json`
 is committed. Relative paths resolve against the registry file's directory.
 
+Maintenance is tool-assisted since 2026-08-07: `scripts/sync-registry.ts`
+(`bun run registry:check|sync`) discovers member-repo kernel manifests and
+appends missing projects; it is registry-authoritative — existing entries are
+never modified, drift is only reported (Core's doctor runs the check). The
+`agent-kernel` project (the "core kernel": generic catalog + core-harness on
+:4860 + TUI-session ingest) registers like any other; see
+`agent-kernel/docs/10-system-design/70-harness-model.md`.
+
 ```jsonc
 {
   "registryVersion": 1,

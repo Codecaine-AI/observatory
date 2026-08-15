@@ -1,8 +1,19 @@
 import { useState } from "react";
+import type { CatalogAgentSummary } from "@agent-kernel/viewer-core";
 
 import { fetchProjectLogs, type RegistryProject } from "../api";
 
-export type ObservatorySection = "agents" | "traces";
+/** What the main pane shows for the selected project. */
+export type ObservatoryView =
+  | { kind: "traces" }
+  | { kind: "agent"; agentName: string };
+
+/** Per-project agent catalog, fetched by App for every live project. */
+export type ProjectAgentsState =
+  | { status: "offline" }
+  | { status: "loading" }
+  | { status: "ready"; agents: CatalogAgentSummary[] }
+  | { status: "error"; message: string };
 
 export interface ProjectActionState {
   kind: "start" | "stop";
@@ -18,14 +29,14 @@ export type ProjectLifecycleTone =
 
 interface ProjectSidebarProps {
   projects: RegistryProject[];
+  catalogs: Record<string, ProjectAgentsState | undefined>;
   selectedProjectId: string | null;
-  section: ObservatorySection;
-  onSelect: (projectId: string, section: ObservatorySection) => void;
+  view: ObservatoryView;
+  onSelectTraces: (projectId: string) => void;
+  onSelectAgent: (projectId: string, agentName: string) => void;
   onStart: (projectId: string) => void;
   onStop: (projectId: string) => void;
   actions: Record<string, ProjectActionState | undefined>;
-  theme: "light" | "dark";
-  onToggleTheme: () => void;
   onRefresh: () => void;
   refreshing: boolean;
 }
@@ -52,140 +63,163 @@ export function projectLifecycle(
 
 export function ProjectSidebar({
   projects,
+  catalogs,
   selectedProjectId,
-  section,
-  onSelect,
+  view,
+  onSelectTraces,
+  onSelectAgent,
   onStart,
   onStop,
   actions,
-  theme,
-  onToggleTheme,
   onRefresh,
   refreshing,
 }: ProjectSidebarProps) {
+  const [collapsed, setCollapsed] = useState(false);
+  // Expansion is per-project UI state; groups start collapsed.
+  const [expandedOverrides, setExpandedOverrides] = useState<
+    Record<string, boolean>
+  >({});
+
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-border bg-card">
-      <header className="border-b border-border px-5 py-4">
-        <p className="font-mono text-[9px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-          Local development
-        </p>
-        <h1 className="mt-1 font-display text-[15px] font-bold uppercase tracking-[0.14em]">
-          Observatory
-        </h1>
+    <aside
+      className={`flex h-full shrink-0 flex-col overflow-hidden border-r border-border bg-card transition-[width] duration-200 ${
+        collapsed ? "w-12" : "w-64"
+      }`}
+    >
+      <header
+        className={`flex h-16 shrink-0 items-center border-b border-border ${
+          collapsed ? "justify-center px-2" : "justify-between gap-3 px-5"
+        }`}
+      >
+        {!collapsed ? (
+          <h1 className="truncate font-display text-[15px] font-bold uppercase tracking-[0.14em]">
+            Observatory
+          </h1>
+        ) : null}
+        <button
+          type="button"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!collapsed}
+          onClick={() => setCollapsed((current) => !current)}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[2px] border border-border font-mono text-[12px] leading-none text-muted-foreground hover:text-foreground"
+        >
+          <span aria-hidden>{collapsed ? "›" : "‹"}</span>
+        </button>
       </header>
 
-      <div className="flex items-center justify-between px-4 pb-2 pt-4">
+      {!collapsed ? <><div className="flex items-center justify-between px-4 pb-1.5 pt-3">
         <h2 className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
           Projects
         </h2>
         <button
           type="button"
-          className="rounded-[2px] border border-border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground disabled:opacity-50"
+          aria-label="Refresh projects"
+          title="Refresh projects"
+          className="flex h-[19px] w-[19px] items-center justify-center rounded-[2px] border border-border font-mono text-[10px] leading-none text-muted-foreground hover:text-foreground disabled:opacity-50"
           disabled={refreshing}
           onClick={onRefresh}
         >
-          {refreshing ? "Checking" : "Refresh"}
+          <span aria-hidden className={refreshing ? "animate-spin" : undefined}>
+            ↻
+          </span>
         </button>
       </div>
 
-      <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
+      <nav className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
         {projects.length === 0 ? (
-          <p className="px-2 py-4 font-mono text-[11px] text-muted-foreground">
+          <p className="px-3 py-4 font-mono text-[11px] text-muted-foreground">
             No projects registered.
           </p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-[3px]">
             {projects.map((project) => {
               const selected = project.id === selectedProjectId;
               const action = actions[project.id];
-              const lifecycle = projectLifecycle(project, action);
-              const supervisorOwned = project.managed.pid !== undefined;
-              const showStart =
-                !project.live
-                && !supervisorOwned
-                && project.managed.state !== "starting"
-                && project.launchable;
+              const expanded = expandedOverrides[project.id] ?? false;
+              const tracesActive = selected && view.kind === "traces";
+              const catalog = catalogs[project.id] ?? { status: "offline" };
               return (
-                <li
-                  key={project.id}
-                  className={`overflow-hidden rounded-[3px] border ${
-                    selected
-                      ? "border-status-info-border bg-status-info-fill/20"
-                      : "border-border bg-background/30"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 border-b border-border/70 px-2.5 py-2">
-                    <span
-                      aria-hidden
-                      className={`h-1.5 w-1.5 shrink-0 rounded-full ${dotClass(lifecycle.tone)}`}
-                    />
-                    <span className="min-w-0 flex-1 truncate font-mono text-[12px] font-bold">
-                      {project.name}
-                    </span>
-                    <span
-                      className={`rounded-[2px] border px-1 py-0.5 font-mono text-[8px] font-bold uppercase tracking-[0.08em] ${badgeClass(lifecycle.tone)}`}
+                <li key={project.id}>
+                  <div
+                    className={`overflow-hidden rounded-[3px] border ${
+                      expanded
+                        ? "border-border bg-background/30"
+                        : "border-transparent"
+                    }`}
+                  >
+                    <div
+                      className={`flex min-h-[35px] items-center gap-1.5 px-1.5 ${
+                        tracesActive
+                          ? "bg-status-info-fill/20"
+                          : "hover:bg-muted/25"
+                      }`}
                     >
-                      {lifecycle.label}
-                    </span>
-                  </div>
-
-                  {supervisorOwned || showStart || action?.error ? (
-                    <div className="border-b border-border/70 px-2.5 py-2 font-mono">
-                      {supervisorOwned || showStart ? (
-                        <button
-                          type="button"
-                          disabled={action?.pending === true}
-                          onClick={() =>
-                            supervisorOwned
-                              ? onStop(project.id)
-                              : onStart(project.id)
-                          }
-                          className="rounded-[2px] border border-border bg-card px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground disabled:opacity-50"
-                        >
-                          {action?.pending
-                            ? action.kind === "start"
-                              ? "Starting…"
-                              : "Stopping…"
-                            : supervisorOwned
-                              ? "Stop"
-                              : "Start"}
-                        </button>
-                      ) : null}
-                      {action?.error ? (
-                        <p className="mt-1.5 text-[9px] leading-4 text-destructive">
-                          {action.error}
-                        </p>
-                      ) : null}
+                      <button
+                        type="button"
+                        aria-label={
+                          expanded ? "Collapse project" : "Expand project"
+                        }
+                        aria-expanded={expanded}
+                        onClick={() =>
+                          setExpandedOverrides((current) => ({
+                            ...current,
+                            [project.id]: !expanded,
+                          }))
+                        }
+                        className={`flex w-3.5 shrink-0 justify-center font-mono text-[10px] leading-none text-muted-foreground/70 transition-transform duration-150 hover:text-foreground ${
+                          expanded ? "rotate-90" : "rotate-0"
+                        }`}
+                      >
+                        ›
+                      </button>
+                      <button
+                        type="button"
+                        aria-current={tracesActive ? "page" : undefined}
+                        title={`${project.name} traces`}
+                        onClick={() => onSelectTraces(project.id)}
+                        className={`min-w-0 flex-1 truncate py-1.5 text-left font-mono text-[11px] font-bold transition-colors ${
+                          tracesActive
+                            ? "text-status-info"
+                            : "text-foreground hover:text-status-info"
+                        }`}
+                      >
+                        {project.name}
+                      </button>
+                      <LifecycleToggle
+                        project={project}
+                        action={action}
+                        onStart={onStart}
+                        onStop={onStop}
+                      />
                     </div>
-                  ) : null}
 
-                  {project.managed.state === "failed"
-                  || project.managed.state === "exited" ? (
-                    <ProjectLogsDisclosure
-                      projectId={project.id}
-                      exitCode={project.managed.exitCode}
-                    />
-                  ) : null}
+                    {action?.error ? (
+                      <p className="border-t border-border/70 px-2.5 py-1.5 font-mono text-[9px] leading-4 text-destructive">
+                        {action.error}
+                      </p>
+                    ) : null}
 
-                  <div className="grid grid-cols-2 gap-px bg-border/60">
-                    {(["agents", "traces"] as const).map((item) => {
-                      const active = selected && section === item;
-                      return (
-                        <button
-                          key={item}
-                          type="button"
-                          aria-current={active ? "page" : undefined}
-                          onClick={() => onSelect(project.id, item)}
-                          className={`bg-card px-2.5 py-2 text-left font-mono text-[10px] font-bold uppercase tracking-[0.1em] transition-colors ${
-                            active
-                              ? "text-status-info"
-                              : "text-muted-foreground hover:bg-muted/35 hover:text-foreground"
-                          }`}
-                        >
-                          {item}
-                        </button>
-                      );
-                    })}
+                    {project.managed.state === "failed"
+                    || project.managed.state === "exited" ? (
+                      <ProjectLogsDisclosure
+                        projectId={project.id}
+                        exitCode={project.managed.exitCode}
+                      />
+                    ) : null}
+
+                    {expanded ? (
+                      <AgentList
+                        project={project}
+                        catalog={catalog}
+                        selectedAgentName={
+                          selected && view.kind === "agent"
+                            ? view.agentName
+                            : null
+                        }
+                        onSelectAgent={onSelectAgent}
+                      />
+                    ) : null}
                   </div>
                 </li>
               );
@@ -193,20 +227,152 @@ export function ProjectSidebar({
           </ul>
         )}
       </nav>
-
-      <footer className="flex items-center justify-between border-t border-border px-4 py-3">
-        <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground">
-          API :4890
-        </span>
-        <button
-          type="button"
-          onClick={onToggleTheme}
-          className="rounded-[2px] border border-border px-1.5 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
-        >
-          {theme === "dark" ? "Light" : "Dark"}
-        </button>
-      </footer>
+      </> : null}
     </aside>
+  );
+}
+
+/**
+ * The lifecycle control doubles as the status indicator, colored by the
+ * action it performs: a red stop square means the project is running (click
+ * stops it), a green play glyph starts it. There is deliberately no textual
+ * Online/Offline badge.
+ */
+function LifecycleToggle({
+  project,
+  action,
+  onStart,
+  onStop,
+}: {
+  project: RegistryProject;
+  action?: ProjectActionState;
+  onStart: (projectId: string) => void;
+  onStop: (projectId: string) => void;
+}) {
+  const pending = action?.pending === true;
+  const supervisorOwned = project.managed.pid !== undefined;
+  const starting =
+    project.managed.state === "starting"
+    || (pending && action?.kind === "start");
+  const crashed =
+    project.managed.state === "failed" || project.managed.state === "exited";
+
+  const base =
+    "flex h-[19px] w-[19px] shrink-0 items-center justify-center rounded-[2px] border font-mono text-[9px] leading-none transition-colors disabled:opacity-60";
+
+  if (starting) {
+    return (
+      <button
+        type="button"
+        disabled
+        title="Starting…"
+        aria-label={`${project.name} starting`}
+        className={`${base} animate-pulse border-status-warning-border bg-status-warning-fill/30 text-status-warning`}
+      >
+        ▶
+      </button>
+    );
+  }
+
+  if (project.live || supervisorOwned) {
+    return (
+      <button
+        type="button"
+        disabled={pending || !supervisorOwned}
+        title={
+          supervisorOwned
+            ? "Running — click to stop"
+            : "Running (started outside Observatory)"
+        }
+        aria-label={`Stop ${project.name}`}
+        onClick={() => onStop(project.id)}
+        className={`${base} border-destructive/40 bg-destructive/10 text-destructive ${
+          supervisorOwned ? "hover:bg-destructive/20" : ""
+        }`}
+      >
+        ■
+      </button>
+    );
+  }
+
+  if (project.launchable) {
+    return (
+      <button
+        type="button"
+        disabled={pending}
+        title={crashed ? "Crashed — click to restart" : "Start"}
+        aria-label={`Start ${project.name}`}
+        onClick={() => onStart(project.id)}
+        className={`${base} border-status-success-border bg-status-success-fill/30 text-status-success hover:bg-status-success-fill/50`}
+      >
+        ▶
+      </button>
+    );
+  }
+
+  return null;
+}
+
+function AgentList({
+  project,
+  catalog,
+  selectedAgentName,
+  onSelectAgent,
+}: {
+  project: RegistryProject;
+  catalog: ProjectAgentsState;
+  selectedAgentName: string | null;
+  onSelectAgent: (projectId: string, agentName: string) => void;
+}) {
+  if (catalog.status === "offline") return null;
+
+  if (catalog.status === "loading") {
+    return (
+      <p className="border-t border-border/70 px-5 py-1.5 font-mono text-[10px] text-muted-foreground">
+        Loading agents…
+      </p>
+    );
+  }
+  if (catalog.status === "error") {
+    return (
+      <p className="border-t border-border/70 px-5 py-1.5 font-mono text-[9px] leading-4 text-destructive">
+        {catalog.message}
+      </p>
+    );
+  }
+  if (catalog.agents.length === 0) {
+    return (
+      <p className="border-t border-border/70 px-5 py-1.5 font-mono text-[10px] text-muted-foreground">
+        No agents registered.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="border-t border-border/70 p-1">
+      {catalog.agents.map((agent) => {
+        const active = agent.name === selectedAgentName;
+        return (
+          <li key={agent.name}>
+            <button
+              type="button"
+              aria-current={active ? "page" : undefined}
+              title={agent.valid ? agent.name : `${agent.name} — invalid bundle`}
+              onClick={() => onSelectAgent(project.id, agent.name)}
+              className={`w-full truncate rounded-[2px] border py-[7px] pl-5 pr-2 text-left font-mono text-[11px] transition-colors ${
+                active
+                  ? "border-status-info-border/50 bg-status-info-fill/30 text-foreground"
+                  : `border-transparent hover:bg-muted/30 hover:text-foreground ${
+                      agent.valid ? "text-muted-foreground" : "text-destructive"
+                    }`
+              }`}
+            >
+              {agent.name}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -225,7 +391,7 @@ function ProjectLogsDisclosure({
 
   return (
     <details
-      className="border-b border-border/70 bg-destructive/5 px-2.5 py-2 font-mono"
+      className="border-t border-border/70 bg-destructive/5 px-2.5 py-1.5 font-mono"
       onToggle={(event) => {
         if (!event.currentTarget.open || state.status !== "idle") return;
         setState({ status: "loading", lines: [] });
@@ -256,26 +422,4 @@ function ProjectLogsDisclosure({
       ) : null}
     </details>
   );
-}
-
-function dotClass(tone: ProjectLifecycleTone): string {
-  if (tone === "success") {
-    return "bg-status-success shadow-[0_0_4px_rgb(84_214_147/0.45)]";
-  }
-  if (tone === "warning") return "bg-status-warning";
-  if (tone === "destructive") return "bg-destructive";
-  return "bg-muted-foreground/40";
-}
-
-function badgeClass(tone: ProjectLifecycleTone): string {
-  if (tone === "success") {
-    return "border-status-success-border bg-status-success-fill/30 text-status-success";
-  }
-  if (tone === "warning") {
-    return "border-status-warning-border bg-status-warning-fill/30 text-status-warning";
-  }
-  if (tone === "destructive") {
-    return "border-destructive/40 bg-destructive/10 text-destructive";
-  }
-  return "border-status-neutral-border bg-status-neutral-fill text-status-neutral";
 }

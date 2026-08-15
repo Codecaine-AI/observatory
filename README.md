@@ -24,7 +24,15 @@ no harness terminals are required.
 
 ## Register a project
 
-Edit the machine-local `registry.json` and add an entry to `projects`:
+The fast path: `bun run registry:check` reports member-repo kernels that are
+missing from (or drifted against) the registry, and `bun run registry:sync`
+appends the missing ones with conservative defaults. The sync discovers
+`.agent-kernel/kernel.json` manifests across the Core `members.json` repos; it
+is registry-authoritative — existing entries are never modified, and drift is
+only reported. Core's root doctor runs the check as a warning.
+
+To register by hand (or to tune a synced entry), edit the machine-local
+`registry.json` and add an entry to `projects`:
 
 ```json
 {
@@ -59,3 +67,13 @@ their process lifecycle.
 
 `registry.example.json` is a resettable starting point; `registry.json` stays
 untracked because its paths and ports are machine-local.
+
+## TUI sessions
+
+Interactive `@agent-kernel/tui` sessions (`/kernel` in pi) write
+session-binding markers into pi's transcript; `bunx agent-kernel-tui-ingest`
+folds them into the owning repo's `trace.db` (idempotent, batch). Ingested
+sessions appear in each project's trace list with a `tui` origin badge —
+including the `agent-kernel` project itself, which hosts the generic catalog
+and its core harness on :4860. Model doc:
+`agent-kernel/docs/10-system-design/70-harness-model.md`.

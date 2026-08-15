@@ -45,6 +45,36 @@
       "launchCommand": "bun run --cwd ../prompt-kit dev:agent",
       "autoLaunch": true,
       "writable": true
+    },
+    {
+      "id": "agent-kernel",
+      "name": "Agent Kernel",
+      "kernelRoot": "../agent-kernel/.agent-kernel",
+      "dbPath": null,
+      "catalogRoots": [
+        "../agent-kernel/catalog"
+      ],
+      "readApiBaseUrl": "http://127.0.0.1:4860",
+      "viewerBaseUrl": null,
+      "extensionPackage": null,
+      "launchCommand": "bun run --cwd ../agent-kernel core-harness",
+      "autoLaunch": false,
+      "writable": true
+    },
+    {
+      "id": "docs-system",
+      "name": "Docs System",
+      "kernelRoot": "../docs-system/.agent-kernel",
+      "dbPath": null,
+      "catalogRoots": [
+        "../docs-system/catalog"
+      ],
+      "readApiBaseUrl": "http://127.0.0.1:4840",
+      "viewerBaseUrl": null,
+      "extensionPackage": null,
+      "launchCommand": "bun run --cwd ../docs-system docs-kernel",
+      "autoLaunch": false,
+      "writable": true
     }
   ]
 }

@@ -145,17 +145,6 @@
   --font-sans: "TX-02", ui-sans-serif, system-ui, sans-serif;
 }
 
-:root[data-theme="light"] {
-  --editor-bg: #fbfbf9;
-  --editor-fg: #1a1a19;
-  --editor-line-number: #898781;
-  --editor-line-number-active: #52514e;
-  --editor-gutter-bg: #fbfbf9;
-  --editor-rule: rgb(0 0 0 / 0.04);
-  --editor-guide: rgb(0 0 0 / 0.08);
-  --editor-landmark: rgb(0 0 0 / 0.028);
-}
-
 * {
   box-sizing: border-box;
 }
