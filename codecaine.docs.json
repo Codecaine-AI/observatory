@@ -1,0 +1,9 @@
+{
+  "id": "ent_01M4F6XQRBS1C6BHT859RQGWDA",
+  "name": "Observatory",
+  "kind": "core",
+  "docsRoot": "docs",
+  "products": [
+    "docs"
+  ]
+}
