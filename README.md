@@ -5,7 +5,7 @@ and kernel traces across registered Codecaine projects. It reads trace SQLite
 databases directly and proxies catalog requests to each project's running
 harness.
 
-Viewer functionality follows the [viewer layering policy](docs/VIEWER-LAYERING.md).
+Viewer functionality follows the [viewer layering policy](docs/10-viewer-layering).
 
 ## Run
 
@@ -76,4 +76,4 @@ folds them into the owning repo's `trace.db` (idempotent, batch). Ingested
 sessions appear in each project's trace list with a `tui` origin badge —
 including the `agent-kernel` project itself, which hosts the generic catalog
 and its core harness on :4860. Model doc:
-`agent-kernel/docs/10-system-design/70-harness-model.md`.
+`agent-kernel/docs/10-system-design/70-harness-model`.

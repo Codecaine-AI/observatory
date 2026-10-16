@@ -34,7 +34,7 @@ appends missing projects; it is registry-authoritative — existing entries are
 never modified, drift is only reported (Core's doctor runs the check). The
 `agent-kernel` project (the "core kernel": generic catalog + core-harness on
 :4860 + TUI-session ingest) registers like any other; see
-`agent-kernel/docs/10-system-design/70-harness-model.md`.
+`agent-kernel/docs/10-system-design/70-harness-model`.
 
 ```jsonc
 {
@@ -147,7 +147,7 @@ Projects (from /registry/projects, live/offline badge)
 
 ## Extensions v0
 
-See the [viewer layering policy](docs/VIEWER-LAYERING.md).
+See the [viewer layering policy](docs/10-viewer-layering).
 
 Per-harness rich rendering ships as code the harness exports; Observatory
 always falls back to generic rendering (unknown `app:*` events already degrade
