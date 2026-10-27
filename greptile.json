@@ -1,0 +1,14 @@
+{
+  "strictness": 2,
+  "commentTypes": [
+    "logic",
+    "syntax"
+  ],
+  "triggerOnDrafts": false,
+  "autoReview": [
+    "open",
+    "push"
+  ],
+  "ignorePatterns": "**/dist/**\n**/dist-static/**\n**/build/**\n**/coverage/**\nbun.lock\n**/package-lock.json\n**/__snapshots__/**\n**/*.snap\n**/__fixtures__/**\n**/fixtures/**\n**/*.log\ndocs/**/*.json",
+  "instructions": "Bun and TypeScript app: an Elysia API server in src/server/ and a React and Vite UI in src/ui/, with tests under test/. Docs pages (docs/**/doc.json) are written by tools, not by hand. Focus on correctness, types, error handling and missing tests. Skip style nits."
+}
