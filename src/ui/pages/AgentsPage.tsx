@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import {
   type CatalogAgentDetail,
   type CatalogAgentSummary,
-} from "@agent-kernel/viewer-core";
+} from "@codecaine-ai/agent-kernel-viewer-core";
 import {
   AgentPromptLabContainer,
   PromptStyleSidebar,
   PROMPT_STYLE_SIDEBAR_DEFAULT_WIDTH,
   clampPromptStyleSidebarWidth,
-} from "@agent-kernel/viewer-ui";
+} from "@codecaine-ai/agent-kernel-viewer-ui";
 import { usePromptStyleSettings } from "@codecaine-ai/prompt-kit/ui/style";
 
 import {

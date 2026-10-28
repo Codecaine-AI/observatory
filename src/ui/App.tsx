@@ -13,7 +13,7 @@ import {
   styleVars,
   type StyleSettings,
   type StyleSystemConfig,
-} from "@agent-kernel/viewer-shell";
+} from "@codecaine-ai/agent-kernel-viewer-shell";
 
 import {
   fetchRegistryProjects,

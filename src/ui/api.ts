@@ -5,7 +5,7 @@ import {
   type CatalogAgentListResponse,
   type KernelTraceSessionDetail,
   type KernelTraceSessionListResponse,
-} from "@agent-kernel/viewer-core";
+} from "@codecaine-ai/agent-kernel-viewer-core";
 
 export interface RegistryProject {
   id: string;
