@@ -12,12 +12,12 @@ stay runnable and viewable on their own.
 
 ## Position
 
-- New peer repo: `Core/observatory`. Consumes `@agent-kernel/*` viewer/db
+- New peer repo: `Core/observatory`. Consumes `@codecaine-ai/agent-kernel*` viewer/db
   packages and `@codecaine-ai/prompt-kit` via `link:` dependencies. Its
   `src/ui/vite.config.ts` handles linked TypeScript source with fs allowances,
   React dedup, and prebundle exclusions.
 - Stack: Bun + TypeScript. Server: Elysia (match canvas-agent). UI: Vite +
-  React using `@agent-kernel/viewer-shell` / `viewer-ui` / `viewer-core`.
+  React using `@codecaine-ai/agent-kernel-viewer-shell` / `viewer-ui` / `viewer-core`.
 - Ports: API `4890`, UI dev server `4891` (unused across Core; existing usage:
   2455, 3998, 3999, 4173, 4800–4811, 4820, 4830, 5174, 8788).
 - `scripts/dev.ts` launcher spawns API + UI, kills both on exit (same pattern
@@ -54,7 +54,7 @@ readApiBaseUrl `http://127.0.0.1:8788`).
 
 ## Kernel manifest v2
 
-Owned by `@agent-kernel/db` (`packages/db/src/manifest.ts`). Written by each
+Owned by `@codecaine-ai/agent-kernel-db` (`packages/db/src/manifest.ts`). Written by each
 harness on boot. v2 adds self-description so a harness can be registered from
 its manifest alone; Observatory treats registry entries as authoritative and
 manifests as fallback/enrichment.
@@ -108,8 +108,8 @@ a live harness.
 Implementation preference for the local-DB routes: reuse the service factories
 behind `packages/kernel/src/read-api.ts` with a configurable prefix if they can
 be constructed from a DB handle without a running kernel; otherwise implement
-thin handlers over `@agent-kernel/db` query helpers returning the DTOs
-`@agent-kernel/viewer-core` expects (`viewer-core/src/api.ts` path constants
+thin handlers over `@codecaine-ai/agent-kernel-db` query helpers returning the DTOs
+`@codecaine-ai/agent-kernel-viewer-core` expects (`viewer-core/src/api.ts` path constants
 are the contract).
 
 ## UI (port 4891)
@@ -166,9 +166,9 @@ export interface ObservatoryViewerExtension {
 
 ## Workstreams
 
-1. `@agent-kernel/db`: manifest v2 + atomic write + `openKernelDatabaseReadOnly`
+1. `@codecaine-ai/agent-kernel-db`: manifest v2 + atomic write + `openKernelDatabaseReadOnly`
    helper; update simple-research server's manifest write.
-2. `@agent-kernel/kernel` + viewer-core/ui: catalog API gaps — expose stored
+2. `@codecaine-ai/agent-kernel` + viewer-core/ui: catalog API gaps — expose stored
    revision documents (`GET .../revisions/:hash/document`) and optimistic
    concurrency on prompt saves (`expectedHash` → 409 with current hash).
 3. Observatory itself: scaffold, server, UI (this repo).

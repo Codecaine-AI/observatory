@@ -3,11 +3,11 @@ import {
   buildTraceSpans,
   type KernelTraceSessionDetail,
   type KernelTraceSessionSummary,
-} from "@agent-kernel/viewer-core";
+} from "@codecaine-ai/agent-kernel-viewer-core";
 import {
   KernelTraceWorkspace,
   type TraceWorkspaceRow,
-} from "@agent-kernel/viewer-shell";
+} from "@codecaine-ai/agent-kernel-viewer-shell";
 
 import {
   fetchTraceSessionDetail,

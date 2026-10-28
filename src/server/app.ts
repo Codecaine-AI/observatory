@@ -3,7 +3,7 @@ import { Elysia } from "elysia";
 import {
   createKernelTraceReadApi,
   type KernelTraceReadQuery,
-} from "@agent-kernel/kernel/read-api";
+} from "@codecaine-ai/agent-kernel/read-api";
 
 import { ProjectDatabaseManager } from "./database";
 import {

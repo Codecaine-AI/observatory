@@ -10,10 +10,10 @@ import {
   piAgentSessions,
   traceBlobs,
   traceEvents,
-} from "@agent-kernel/db";
-import { createKernelCatalogService } from "@agent-kernel/kernel";
-import { buildRegistry } from "@agent-kernel/kernel/agent-registry";
-import { createKernelCatalogApi } from "@agent-kernel/kernel/catalog-api";
+} from "@codecaine-ai/agent-kernel-db";
+import { createKernelCatalogService } from "@codecaine-ai/agent-kernel";
+import { buildRegistry } from "@codecaine-ai/agent-kernel/agent-registry";
+import { createKernelCatalogApi } from "@codecaine-ai/agent-kernel/catalog-api";
 
 import { createObservatoryApp, type ObservatoryApp } from "../src/server/app";
 import type { FetchLike } from "../src/server/liveness";

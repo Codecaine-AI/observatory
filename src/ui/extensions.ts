@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { DetailBlockProvider } from "@agent-kernel/viewer-ui";
+import type { DetailBlockProvider } from "@codecaine-ai/agent-kernel-viewer-ui";
 
 import { viewerApiPrefix, type RegistryProject } from "./api";
 

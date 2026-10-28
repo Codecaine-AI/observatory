@@ -4,13 +4,13 @@ import {
   listSessionContainersWithStats,
   openKernelDatabaseReadOnly,
   type KernelDatabaseHandle,
-} from "@agent-kernel/db";
+} from "@codecaine-ai/agent-kernel-db";
 import {
   createContainerReadService,
   type KernelReadApiService,
   type KernelSessionContainerSummary,
-} from "@agent-kernel/kernel";
-import type { KernelTraceReadQuery } from "@agent-kernel/kernel/read-api";
+} from "@codecaine-ai/agent-kernel";
+import type { KernelTraceReadQuery } from "@codecaine-ai/agent-kernel/read-api";
 
 import type { ResolvedRegistryProject } from "./registry";
 

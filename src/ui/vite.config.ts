@@ -11,9 +11,9 @@ const CANVAS_DIR = resolve(REPO_ROOT, "../canvas");
 const PROMPT_KIT_DIR = resolve(REPO_ROOT, "../prompt-kit");
 
 const LINKED_SOURCE_PACKAGES = [
-  "@agent-kernel/viewer-core",
-  "@agent-kernel/viewer-ui",
-  "@agent-kernel/viewer-shell",
+  "@codecaine-ai/agent-kernel-viewer-core",
+  "@codecaine-ai/agent-kernel-viewer-ui",
+  "@codecaine-ai/agent-kernel-viewer-shell",
   "@codecaine-ai/canvas-agent",
   "@codecaine-ai/prompt-kit",
 ];
