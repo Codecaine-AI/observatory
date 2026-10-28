@@ -18,6 +18,7 @@
     "@codecaine-ai/agent-kernel-viewer-shell": "link:@codecaine-ai/agent-kernel-viewer-shell",
     "@codecaine-ai/agent-kernel-viewer-ui": "link:@codecaine-ai/agent-kernel-viewer-ui",
     "@codecaine-ai/canvas-agent": "link:@codecaine-ai/canvas-agent",
+    "@codecaine-ai/design-system": "link:@codecaine-ai/design-system",
     "@codecaine-ai/prompt-kit": "link:@codecaine-ai/prompt-kit",
     "elysia": "^1.2.0",
     "react": "19.2.3",
