@@ -12,6 +12,7 @@
         "@codecaine-ai/agent-kernel-viewer-shell": "link:@codecaine-ai/agent-kernel-viewer-shell",
         "@codecaine-ai/agent-kernel-viewer-ui": "link:@codecaine-ai/agent-kernel-viewer-ui",
         "@codecaine-ai/canvas-agent": "link:@codecaine-ai/canvas-agent",
+        "@codecaine-ai/design-system": "link:@codecaine-ai/design-system",
         "@codecaine-ai/prompt-kit": "link:@codecaine-ai/prompt-kit",
         "elysia": "^1.2.0",
         "react": "19.2.3",
@@ -85,6 +86,8 @@
     "@borewit/text-codec": ["@borewit/text-codec@0.2.2", "", {}, "sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ=="],
 
     "@codecaine-ai/canvas-agent": ["@codecaine-ai/canvas-agent@link:@codecaine-ai/canvas-agent", {}],
+
+    "@codecaine-ai/design-system": ["@codecaine-ai/design-system@link:@codecaine-ai/design-system", {}],
 
     "@codecaine-ai/prompt-kit": ["@codecaine-ai/prompt-kit@link:@codecaine-ai/prompt-kit", {}],
 
