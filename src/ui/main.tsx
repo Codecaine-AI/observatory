@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "@codecaine-ai/design-system/tokens.css";
+import "@codecaine-ai/design-system/host-contract.css";
 import "@codecaine-ai/agent-kernel-viewer-ui/styles";
 import "@codecaine-ai/agent-kernel-viewer-shell/styles";
 import "./index.css";

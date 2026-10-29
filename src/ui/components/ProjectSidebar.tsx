@@ -66,7 +66,7 @@ export function ProjectSidebar({
   return (
     <aside className="flex h-full w-64 shrink-0 flex-col border-r border-border bg-card">
       <header className="border-b border-border px-5 py-4">
-        <p className="font-mono text-[9px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+        <p className="font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.22em] text-muted-foreground">
           Local development
         </p>
         <h1 className="mt-1 font-display text-[15px] font-bold uppercase tracking-[0.14em]">
@@ -75,12 +75,12 @@ export function ProjectSidebar({
       </header>
 
       <div className="flex items-center justify-between px-4 pb-2 pt-4">
-        <h2 className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+        <h2 className="font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.16em] text-muted-foreground">
           Projects
         </h2>
         <button
           type="button"
-          className="rounded-[2px] border border-border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground disabled:opacity-50"
+          className="flex h-(--ds-control-height-lg) items-center rounded-[2px] border border-border px-2 font-mono text-(length:--ds-font-size-ui-2xs) uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground disabled:opacity-50"
           disabled={refreshing}
           onClick={onRefresh}
         >
@@ -90,7 +90,7 @@ export function ProjectSidebar({
 
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
         {projects.length === 0 ? (
-          <p className="px-2 py-4 font-mono text-[11px] text-muted-foreground">
+          <p className="px-2 py-4 font-mono text-(length:--ds-font-size-ui-xs) text-muted-foreground">
             No projects registered.
           </p>
         ) : (
@@ -114,23 +114,23 @@ export function ProjectSidebar({
                       : "border-border bg-background/30"
                   }`}
                 >
-                  <div className="flex items-center gap-2 border-b border-border/70 px-2.5 py-2">
+                  <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2">
                     <span
                       aria-hidden
                       className={`h-1.5 w-1.5 shrink-0 rounded-full ${dotClass(lifecycle.tone)}`}
                     />
-                    <span className="min-w-0 flex-1 truncate font-mono text-[12px] font-bold">
+                    <span className="min-w-0 flex-1 truncate font-mono text-(length:--ds-font-size-ui-xs) font-bold">
                       {project.name}
                     </span>
                     <span
-                      className={`rounded-[2px] border px-1 py-0.5 font-mono text-[8px] font-bold uppercase tracking-[0.08em] ${badgeClass(lifecycle.tone)}`}
+                      className={`rounded-[2px] border px-1 py-0.5 font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.08em] ${badgeClass(lifecycle.tone)}`}
                     >
                       {lifecycle.label}
                     </span>
                   </div>
 
                   {supervisorOwned || showStart || action?.error ? (
-                    <div className="border-b border-border/70 px-2.5 py-2 font-mono">
+                    <div className="border-b border-border/70 px-3 py-2 font-mono">
                       {supervisorOwned || showStart ? (
                         <button
                           type="button"
@@ -140,7 +140,7 @@ export function ProjectSidebar({
                               ? onStop(project.id)
                               : onStart(project.id)
                           }
-                          className="rounded-[2px] border border-border bg-card px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground disabled:opacity-50"
+                          className="rounded-[2px] border border-border bg-card px-2 py-1 text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground disabled:opacity-50"
                         >
                           {action?.pending
                             ? action.kind === "start"
@@ -152,7 +152,7 @@ export function ProjectSidebar({
                         </button>
                       ) : null}
                       {action?.error ? (
-                        <p className="mt-1.5 text-[9px] leading-4 text-destructive">
+                        <p className="mt-1.5 text-(length:--ds-font-size-ui-2xs) leading-4 text-destructive">
                           {action.error}
                         </p>
                       ) : null}
@@ -167,7 +167,7 @@ export function ProjectSidebar({
                     />
                   ) : null}
 
-                  <div className="grid grid-cols-2 gap-px bg-border/60">
+                  <div className="grid grid-cols-2 divide-x divide-border/60">
                     {(["agents", "traces"] as const).map((item) => {
                       const active = selected && section === item;
                       return (
@@ -176,7 +176,7 @@ export function ProjectSidebar({
                           type="button"
                           aria-current={active ? "page" : undefined}
                           onClick={() => onSelect(project.id, item)}
-                          className={`bg-card px-2.5 py-2 text-left font-mono text-[10px] font-bold uppercase tracking-[0.1em] transition-colors ${
+                          className={`bg-card px-3 py-2 text-left font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.1em] transition-colors ${
                             active
                               ? "text-status-info"
                               : "text-muted-foreground hover:bg-muted/35 hover:text-foreground"
@@ -195,13 +195,13 @@ export function ProjectSidebar({
       </nav>
 
       <footer className="flex items-center justify-between border-t border-border px-4 py-3">
-        <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground">
+        <span className="font-mono text-(length:--ds-font-size-ui-2xs) uppercase tracking-[0.12em] text-muted-foreground">
           API :4890
         </span>
         <button
           type="button"
           onClick={onToggleTheme}
-          className="rounded-[2px] border border-border px-1.5 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
+          className="flex h-(--ds-control-height-lg) items-center rounded-[2px] border border-border px-2 font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
         >
           {theme === "dark" ? "Light" : "Dark"}
         </button>
@@ -225,7 +225,7 @@ function ProjectLogsDisclosure({
 
   return (
     <details
-      className="border-b border-border/70 bg-destructive/5 px-2.5 py-2 font-mono"
+      className="border-b border-border/70 bg-destructive/5 px-3 py-2 font-mono"
       onToggle={(event) => {
         if (!event.currentTarget.open || state.status !== "idle") return;
         setState({ status: "loading", lines: [] });
@@ -240,17 +240,17 @@ function ProjectLogsDisclosure({
           );
       }}
     >
-      <summary className="cursor-pointer text-[9px] font-bold uppercase tracking-[0.08em] text-destructive">
+      <summary className="cursor-pointer text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.08em] text-destructive">
         Logs{exitCode !== undefined ? ` · exit ${exitCode}` : ""}
       </summary>
       {state.status === "loading" ? (
-        <p className="mt-2 text-[9px] text-muted-foreground">Loading…</p>
+        <p className="mt-2 text-(length:--ds-font-size-ui-2xs) text-muted-foreground">Loading…</p>
       ) : state.status === "error" ? (
-        <p className="mt-2 text-[9px] leading-4 text-destructive">
+        <p className="mt-2 text-(length:--ds-font-size-ui-2xs) leading-4 text-destructive">
           {state.message}
         </p>
       ) : state.status === "ready" ? (
-        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-[2px] border border-border bg-background p-2 text-[9px] leading-4 text-muted-foreground">
+        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-[2px] border border-border bg-background p-2 text-(length:--ds-font-size-ui-2xs) leading-4 text-muted-foreground">
           {state.lines.length > 0 ? state.lines.join("\n") : "No output captured."}
         </pre>
       ) : null}

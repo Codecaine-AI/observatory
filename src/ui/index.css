@@ -7,93 +7,30 @@
 @source "../../../annotations/src";
 @source "../../../canvas/packages/canvas-agent/src";
 
-:root {
-  --radius: 0.5rem;
-  --background: #1b1b1c;
-  --foreground: #d4d4d4;
-  --card: #252526;
-  --card-foreground: #d4d4d4;
-  --popover: #252526;
-  --popover-foreground: #d4d4d4;
-  --primary: #d4d4d4;
-  --primary-foreground: #1b1b1c;
-  --secondary: #2a2a2b;
-  --secondary-foreground: #d4d4d4;
-  --muted: #2a2a2b;
-  --muted-foreground: #a8a8a8;
-  --accent: #2a2a2b;
-  --accent-foreground: #d4d4d4;
-  --destructive: #e15b58;
-  --border: #3a3a3b;
-  --input: #3a3a3b;
-  --ring: #54d693;
-
-  --trace-container: 168 168 168;
-  --trace-orchestration: 167 139 250;
-  --trace-user: 96 165 250;
-  --trace-assistant: 84 214 147;
-  --trace-tool: 84 211 224;
-  --trace-lifecycle: 168 168 168;
-  --trace-meta: 168 168 168;
-
-  --status-neutral: 168 168 168;
-  --status-neutral-fill: 42 42 43;
-  --status-neutral-border: 74 74 76;
-  --status-success: 84 214 147;
-  --status-success-fill: 10 30 22;
-  --status-success-border: 38 92 70;
-  --status-warning: 220 167 76;
-  --status-warning-fill: 34 28 10;
-  --status-warning-border: 96 74 28;
-  --status-info: 84 211 224;
-  --status-info-fill: 8 30 36;
-  --status-info-border: 28 84 96;
-
-  --syntax-key: 176 176 176;
-  --syntax-string: 84 214 147;
-  --syntax-number: 220 167 76;
-  --syntax-boolean: 214 190 110;
-
-  --agentprism-background: 27 27 28;
-  --agentprism-foreground: 212 212 212;
-  --agentprism-muted: 42 42 43;
-  --agentprism-muted-foreground: 168 168 168;
-  --agentprism-border-subtle: 58 58 59;
-  --agentprism-code-base: 168 168 168;
-  --agentprism-badge-agent-foreground: 84 211 224;
-  --agentprism-badge-chain-foreground: 110 210 184;
-  --agentprism-badge-llm-foreground: 84 214 147;
-  --agentprism-badge-tool-foreground: 220 167 76;
-
-  --editor-bg: #1e1e1e;
-  --editor-fg: #d4d4d4;
-  --editor-line-number: #858585;
-  --editor-line-number-active: #c6c6c6;
-  --editor-gutter-bg: #1e1e1e;
-  --editor-rule: rgb(255 255 255 / 0.04);
-  --editor-guide: rgb(255 255 255 / 0.08);
-  --editor-landmark: rgb(255 255 255 / 0.028);
-}
-
+/*
+ * The viewer contract (--background, --trace-*, --status-*, --editor-*, ...) comes from
+ * @codecaine-ai/design-system/host-contract.css, loaded in main.tsx after the tokens. It follows
+ * data-theme, so light and dark both come from the design-system tokens.
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
+  --color-background: rgb(var(--background));
+  --color-foreground: rgb(var(--foreground));
+  --color-card: rgb(var(--card));
+  --color-card-foreground: rgb(var(--card-foreground));
+  --color-popover: rgb(var(--popover));
+  --color-popover-foreground: rgb(var(--popover-foreground));
+  --color-primary: rgb(var(--primary));
+  --color-primary-foreground: rgb(var(--primary-foreground));
+  --color-secondary: rgb(var(--secondary));
+  --color-secondary-foreground: rgb(var(--secondary-foreground));
+  --color-muted: rgb(var(--muted));
+  --color-muted-foreground: rgb(var(--muted-foreground));
+  --color-accent: rgb(var(--accent));
+  --color-accent-foreground: rgb(var(--accent-foreground));
+  --color-destructive: rgb(var(--destructive));
+  --color-border: rgb(var(--border));
+  --color-input: rgb(var(--input));
+  --color-ring: rgb(var(--ring));
 
   --color-trace-container: rgb(var(--trace-container));
   --color-trace-orchestration: rgb(var(--trace-orchestration));
@@ -132,10 +69,10 @@
   --color-agentprism-badge-llm-foreground: rgb(var(--agentprism-badge-llm-foreground));
   --color-agentprism-badge-tool-foreground: rgb(var(--agentprism-badge-tool-foreground));
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: var(--radius);
 }
 
 @theme {
@@ -143,17 +80,6 @@
   --font-mono: "JetBrains Mono", "IBM Plex Mono", "Geist Mono", ui-monospace, SFMono-Regular,
     Menlo, Consolas, monospace;
   --font-sans: "TX-02", ui-sans-serif, system-ui, sans-serif;
-}
-
-:root[data-theme="light"] {
-  --editor-bg: #fbfbf9;
-  --editor-fg: #1a1a19;
-  --editor-line-number: #898781;
-  --editor-line-number-active: #52514e;
-  --editor-gutter-bg: #fbfbf9;
-  --editor-rule: rgb(0 0 0 / 0.04);
-  --editor-guide: rgb(0 0 0 / 0.08);
-  --editor-landmark: rgb(0 0 0 / 0.028);
 }
 
 * {
@@ -172,8 +98,14 @@ body {
   overflow: hidden;
   font-family: "TX-02", ui-sans-serif, system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
-  scrollbar-color: rgb(168 168 168 / 0.4) transparent;
+  scrollbar-color: var(--ds-color-border-strong) transparent;
   scrollbar-width: thin;
+}
+
+/* A keyboard-scrollable region: inset ring, so the panel border does not clip it. */
+.observatory-scroll-region:focus-visible {
+  outline: var(--ds-border-width-focus) solid var(--ds-color-focus-ring);
+  outline-offset: calc(-1 * var(--ds-border-width-focus));
 }
 
 /* Layered so Tailwind text-size utilities on buttons still win the cascade. */

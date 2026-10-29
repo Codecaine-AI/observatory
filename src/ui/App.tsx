@@ -35,7 +35,7 @@ const STYLE_CONFIG: StyleSystemConfig = {
   railCollapsedStorageKey: "observatory.viewerStyleRailCollapsed",
   railWidthStorageKey: "observatory.viewerStyleRailWidth",
   defaultTheme: "dark",
-  neutralTokenFormat: "hex",
+  neutralTokenFormat: "triplet",
 };
 
 type ProjectState =
@@ -189,7 +189,7 @@ export function App() {
       <main className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border px-5">
           <div className="min-w-0">
-            <p className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.18em] text-muted-foreground">
               {section}
             </p>
             <h2 className="truncate font-display text-[16px] font-bold">
@@ -198,7 +198,7 @@ export function App() {
           </div>
           {activeProject ? (
             <span
-              className={`ml-auto rounded-[2px] border px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.08em] ${headerBadgeClass(
+              className={`ml-auto rounded-[2px] border px-1.5 py-0.5 font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.08em] ${headerBadgeClass(
                 projectLifecycle(activeProject, projectActions[activeProject.id]).tone,
               )}`}
             >
@@ -250,7 +250,7 @@ function CenteredMessage({
 }) {
   return (
     <div className="flex h-full items-center justify-center rounded-[3px] border border-border bg-card p-6 font-mono">
-      <p className={tone === "error" ? "text-[12px] text-destructive" : "text-[11px] text-muted-foreground"}>
+      <p className={tone === "error" ? "text-(length:--ds-font-size-ui-xs) text-destructive" : "text-(length:--ds-font-size-ui-xs) text-muted-foreground"}>
         {children}
       </p>
     </div>
