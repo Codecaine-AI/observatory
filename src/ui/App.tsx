@@ -35,7 +35,7 @@ const STYLE_CONFIG: StyleSystemConfig = {
   railCollapsedStorageKey: "observatory.viewerStyleRailCollapsed",
   railWidthStorageKey: "observatory.viewerStyleRailWidth",
   defaultTheme: "dark",
-  neutralTokenFormat: "hex",
+  neutralTokenFormat: "triplet",
 };
 
 type ProjectState =
