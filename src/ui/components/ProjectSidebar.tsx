@@ -114,7 +114,7 @@ export function ProjectSidebar({
                       : "border-border bg-background/30"
                   }`}
                 >
-                  <div className="flex items-center gap-2 border-b border-border/70 px-2.5 py-2">
+                  <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2">
                     <span
                       aria-hidden
                       className={`h-1.5 w-1.5 shrink-0 rounded-full ${dotClass(lifecycle.tone)}`}
@@ -130,7 +130,7 @@ export function ProjectSidebar({
                   </div>
 
                   {supervisorOwned || showStart || action?.error ? (
-                    <div className="border-b border-border/70 px-2.5 py-2 font-mono">
+                    <div className="border-b border-border/70 px-3 py-2 font-mono">
                       {supervisorOwned || showStart ? (
                         <button
                           type="button"
@@ -167,7 +167,7 @@ export function ProjectSidebar({
                     />
                   ) : null}
 
-                  <div className="grid grid-cols-2 gap-px bg-border/60">
+                  <div className="grid grid-cols-2 divide-x divide-border/60">
                     {(["agents", "traces"] as const).map((item) => {
                       const active = selected && section === item;
                       return (
@@ -176,7 +176,7 @@ export function ProjectSidebar({
                           type="button"
                           aria-current={active ? "page" : undefined}
                           onClick={() => onSelect(project.id, item)}
-                          className={`bg-card px-2.5 py-2 text-left font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.1em] transition-colors ${
+                          className={`bg-card px-3 py-2 text-left font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.1em] transition-colors ${
                             active
                               ? "text-status-info"
                               : "text-muted-foreground hover:bg-muted/35 hover:text-foreground"
@@ -225,7 +225,7 @@ function ProjectLogsDisclosure({
 
   return (
     <details
-      className="border-b border-border/70 bg-destructive/5 px-2.5 py-2 font-mono"
+      className="border-b border-border/70 bg-destructive/5 px-3 py-2 font-mono"
       onToggle={(event) => {
         if (!event.currentTarget.open || state.status !== "idle") return;
         setState({ status: "loading", lines: [] });

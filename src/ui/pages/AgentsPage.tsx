@@ -102,7 +102,7 @@ export function AgentsPage({ project }: AgentsPageProps) {
                   type="button"
                   aria-pressed={selected}
                   onClick={() => setSelectedName(agent.name)}
-                  className={`mb-1 flex w-full items-center gap-2 rounded-[2px] border px-2.5 py-2 text-left transition-colors ${
+                  className={`mb-1 flex w-full items-center gap-2 rounded-[2px] border px-3 py-2 text-left transition-colors ${
                     selected
                       ? "border-status-info-border bg-status-info-fill/30 text-foreground"
                       : "border-transparent text-muted-foreground hover:bg-muted/35 hover:text-foreground"
