@@ -170,17 +170,17 @@ export function TracesPage({ project }: TracesPageProps) {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
       {errorMessageText ? (
-        <div className="mb-3 shrink-0 rounded-[3px] border border-destructive/40 bg-destructive/10 px-3 py-2 font-mono text-[11px] text-destructive">
+        <div className="mb-3 shrink-0 rounded-[3px] border border-destructive/40 bg-destructive/10 px-3 py-2 font-mono text-(length:--ds-font-size-ui-xs) text-destructive">
           {errorMessageText}
         </div>
       ) : null}
       {!project.live ? (
-        <div className="mb-3 shrink-0 rounded-[3px] border border-status-neutral-border bg-status-neutral-fill px-3 py-2 font-mono text-[10px] text-status-neutral">
+        <div className="mb-3 shrink-0 rounded-[3px] border border-status-neutral-border bg-status-neutral-fill px-3 py-2 font-mono text-(length:--ds-font-size-ui-2xs) text-status-neutral">
           Harness not running. Showing traces from the local SQLite database.
         </div>
       ) : null}
       {project.tracesAvailable === false ? (
-        <div className="mb-3 shrink-0 rounded-[3px] border border-border bg-card px-3 py-2 font-mono text-[10px] text-muted-foreground">
+        <div className="mb-3 shrink-0 rounded-[3px] border border-border bg-card px-3 py-2 font-mono text-(length:--ds-font-size-ui-2xs) text-muted-foreground">
           No traces yet. The project has not created its trace database.
         </div>
       ) : null}

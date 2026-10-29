@@ -86,10 +86,10 @@ export function AgentsPage({ project }: AgentsPageProps) {
     <section className="flex h-full min-h-[560px] gap-3 font-mono">
       <aside className="flex w-60 shrink-0 flex-col overflow-hidden rounded-[3px] border border-border bg-card">
         <header className="border-b border-border px-3 py-3">
-          <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+          <h2 className="text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.16em] text-muted-foreground">
             Agents
           </h2>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-(length:--ds-font-size-ui-xs) text-muted-foreground">
             {state.agents.length} registered
           </p>
         </header>
@@ -115,8 +115,8 @@ export function AgentsPage({ project }: AgentsPageProps) {
                     }`}
                   />
                   <span className="min-w-0">
-                    <span className="block truncate text-[12px] font-bold">{agent.name}</span>
-                    <span className="block truncate text-[10px] text-muted-foreground">
+                    <span className="block truncate text-(length:--ds-font-size-ui-xs) font-bold">{agent.name}</span>
+                    <span className="block truncate text-(length:--ds-font-size-ui-2xs) text-muted-foreground">
                       {agent.model || "model not set"}
                     </span>
                   </span>
@@ -134,7 +134,7 @@ export function AgentsPage({ project }: AgentsPageProps) {
             aria-label="Toggle style sidebar"
             aria-pressed={styleOpen}
             onClick={() => setStyleOpen((open) => !open)}
-            className={`absolute right-2 top-2 z-10 rounded-[2px] border px-2 py-0.5 font-mono text-[10px] lowercase tracking-[0.08em] transition-colors ${
+            className={`absolute right-2 top-2 z-10 rounded-[2px] border px-2 py-0.5 font-mono text-(length:--ds-font-size-ui-2xs) lowercase tracking-[0.08em] transition-colors ${
               styleOpen
                 ? "border-status-info-border text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -211,12 +211,12 @@ function ReadOnlyAgentDetail({
     <div className="flex h-full min-h-0 flex-col">
       <header className="shrink-0 border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-[13px] font-bold">{agent.name}</h2>
-          <span className="rounded-[2px] border border-status-neutral-border bg-status-neutral-fill px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-status-neutral">
+          <h2 className="text-(length:--ds-font-size-ui-sm) font-bold">{agent.name}</h2>
+          <span className="rounded-[2px] border border-status-neutral-border bg-status-neutral-fill px-1.5 py-0.5 text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.08em] text-status-neutral">
             Read only
           </span>
         </div>
-        <p className="mt-1 text-[11px] text-muted-foreground">
+        <p className="mt-1 text-(length:--ds-font-size-ui-xs) text-muted-foreground">
           Editing is disabled by this project’s registry entry.
         </p>
       </header>
@@ -226,7 +226,7 @@ function ReadOnlyAgentDetail({
         <PageMessage>Loading prompt…</PageMessage>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          <dl className="mb-4 grid grid-cols-[100px_minmax(0,1fr)] gap-x-3 gap-y-2 text-[11px]">
+          <dl className="mb-4 grid grid-cols-[100px_minmax(0,1fr)] gap-x-3 gap-y-2 text-(length:--ds-font-size-ui-xs)">
             <dt className="uppercase tracking-[0.08em] text-muted-foreground">Model</dt>
             <dd>{agent.model || "Not set"}</dd>
             <dt className="uppercase tracking-[0.08em] text-muted-foreground">Description</dt>
@@ -234,10 +234,10 @@ function ReadOnlyAgentDetail({
             <dt className="uppercase tracking-[0.08em] text-muted-foreground">Prompt hash</dt>
             <dd className="truncate">{detail.promptHash}</dd>
           </dl>
-          <h3 className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+          <h3 className="mb-2 text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.14em] text-muted-foreground">
             Rendered prompt
           </h3>
-          <pre className="overflow-x-auto whitespace-pre-wrap rounded-[3px] border border-border bg-background p-4 text-[12px] leading-5 text-foreground">
+          <pre className="overflow-x-auto whitespace-pre-wrap rounded-[3px] border border-border bg-background p-4 text-(length:--ds-font-size-ui-xs) leading-5 text-foreground">
             {promptText}
           </pre>
         </div>
@@ -254,8 +254,8 @@ function UnavailablePanel({ title, message }: { title: string; message: string }
           aria-hidden
           className="mx-auto mb-3 block h-2 w-2 rounded-full bg-muted-foreground/40"
         />
-        <h2 className="text-[13px] font-bold">{title}</h2>
-        <p className="mt-2 text-[11px] leading-5 text-muted-foreground">{message}</p>
+        <h2 className="text-(length:--ds-font-size-ui-sm) font-bold">{title}</h2>
+        <p className="mt-2 text-(length:--ds-font-size-ui-xs) leading-5 text-muted-foreground">{message}</p>
       </div>
     </section>
   );
@@ -270,7 +270,7 @@ function PageMessage({
 }) {
   return (
     <div className="flex h-full min-h-[320px] items-center justify-center p-6 font-mono">
-      <p className={tone === "error" ? "text-[12px] text-destructive" : "text-[11px] text-muted-foreground"}>
+      <p className={tone === "error" ? "text-(length:--ds-font-size-ui-xs) text-destructive" : "text-(length:--ds-font-size-ui-xs) text-muted-foreground"}>
         {children}
       </p>
     </div>
