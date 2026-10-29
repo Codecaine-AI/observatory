@@ -225,7 +225,12 @@ function ReadOnlyAgentDetail({
       ) : !detail ? (
         <PageMessage>Loading prompt…</PageMessage>
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label={`${agent.name} prompt`}
+          className="observatory-scroll-region min-h-0 flex-1 overflow-y-auto p-4"
+        >
           <dl className="mb-4 grid grid-cols-[100px_minmax(0,1fr)] gap-x-3 gap-y-2 text-(length:--ds-font-size-ui-xs)">
             <dt className="uppercase tracking-[0.08em] text-muted-foreground">Model</dt>
             <dd>{agent.model || "Not set"}</dd>

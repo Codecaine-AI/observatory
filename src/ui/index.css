@@ -102,6 +102,12 @@ body {
   scrollbar-width: thin;
 }
 
+/* A keyboard-scrollable region: inset ring, so the panel border does not clip it. */
+.observatory-scroll-region:focus-visible {
+  outline: var(--ds-border-width-focus) solid var(--ds-color-focus-ring);
+  outline-offset: calc(-1 * var(--ds-border-width-focus));
+}
+
 /* Layered so Tailwind text-size utilities on buttons still win the cascade. */
 @layer base {
   button {
