@@ -80,7 +80,7 @@ export function ProjectSidebar({
         </h2>
         <button
           type="button"
-          className="rounded-[2px] border border-border px-1.5 py-0.5 font-mono text-(length:--ds-font-size-ui-2xs) uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground disabled:opacity-50"
+          className="flex h-(--ds-control-height-lg) items-center rounded-[2px] border border-border px-2 font-mono text-(length:--ds-font-size-ui-2xs) uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground disabled:opacity-50"
           disabled={refreshing}
           onClick={onRefresh}
         >
@@ -201,7 +201,7 @@ export function ProjectSidebar({
         <button
           type="button"
           onClick={onToggleTheme}
-          className="rounded-[2px] border border-border px-1.5 py-1 font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
+          className="flex h-(--ds-control-height-lg) items-center rounded-[2px] border border-border px-2 font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
         >
           {theme === "dark" ? "Light" : "Dark"}
         </button>
