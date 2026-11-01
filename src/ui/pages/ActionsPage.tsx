@@ -110,13 +110,13 @@ export function ActionsPage() {
               </thead>
               <tbody>
                 {state.records.map((record) => (
-                  <tr key={record.id} className="border-b border-border/60 align-top">
+                  <tr key={record.id} className="border-b border-border/60 align-middle">
                     <td className="whitespace-nowrap px-3 py-1.5 text-muted-foreground">
                       <time dateTime={record.at} title={record.at}>
                         {new Date(record.at).toLocaleString()}
                       </time>
                     </td>
-                    <td className="max-w-48 truncate px-3 py-1.5">
+                    <td className="max-w-48 truncate px-3 py-0">
                       {record.threadId ? (
                         <FilterLink
                           label={record.threadId}
@@ -128,7 +128,7 @@ export function ActionsPage() {
                     </td>
                     <td className="whitespace-nowrap px-3 py-1.5">{record.agent}</td>
                     <td className="whitespace-nowrap px-3 py-1.5">{record.tool}</td>
-                    <td className="max-w-64 truncate px-3 py-1.5">
+                    <td className="max-w-64 truncate px-3 py-0">
                       <FilterLink
                         label={record.target}
                         onClick={() => apply({ ...filter, target: record.target })}
@@ -158,7 +158,7 @@ function FilterLink({ label, onClick }: { label: string; onClick: () => void }) 
       type="button"
       title={`Filter by ${label}`}
       onClick={onClick}
-      className="max-w-full truncate text-left hover:text-status-info hover:underline"
+      className="min-h-8 max-w-full truncate text-left hover:text-status-info hover:underline"
     >
       {label}
     </button>

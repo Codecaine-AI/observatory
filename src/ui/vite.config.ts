@@ -49,7 +49,8 @@ export default defineConfig({
       allow: [REPO_ROOT],
     },
     proxy: {
-      "/api": apiProxy,
+      // The trailing slash keeps the proxy off the UI module /api.ts.
+      "/api/": apiProxy,
       "/registry": apiProxy,
     },
   },
