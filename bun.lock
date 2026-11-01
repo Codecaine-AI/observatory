@@ -5,15 +5,8 @@
     "": {
       "name": "@codecaine-ai/observatory",
       "dependencies": {
-        "@codecaine-ai/agent-kernel-db": "link:@codecaine-ai/agent-kernel-db",
-        "@codecaine-ai/agent-kernel": "link:@codecaine-ai/agent-kernel",
-        "@codecaine-ai/agent-kernel-protocol": "link:@codecaine-ai/agent-kernel-protocol",
-        "@codecaine-ai/agent-kernel-viewer-core": "link:@codecaine-ai/agent-kernel-viewer-core",
-        "@codecaine-ai/agent-kernel-viewer-shell": "link:@codecaine-ai/agent-kernel-viewer-shell",
-        "@codecaine-ai/agent-kernel-viewer-ui": "link:@codecaine-ai/agent-kernel-viewer-ui",
-        "@codecaine-ai/canvas-agent": "link:@codecaine-ai/canvas-agent",
+        "@codecaine-ai/action-log": "link:@codecaine-ai/action-log",
         "@codecaine-ai/design-system": "link:@codecaine-ai/design-system",
-        "@codecaine-ai/prompt-kit": "link:@codecaine-ai/prompt-kit",
         "elysia": "^1.2.0",
         "react": "19.2.3",
         "react-dom": "19.2.3",
@@ -31,18 +24,6 @@
     },
   },
   "packages": {
-    "@codecaine-ai/agent-kernel-db": ["@codecaine-ai/agent-kernel-db@link:@codecaine-ai/agent-kernel-db", {}],
-
-    "@codecaine-ai/agent-kernel": ["@codecaine-ai/agent-kernel@link:@codecaine-ai/agent-kernel", { "bin": { "agent-kernel-doctor": "./src/doctor-cli.ts", "agent-kernel-render-prompts": "./src/render-prompts-cli.ts", "agent-kernel-backfill": "./src/transcript-recovery/backfill-cli.ts" } }],
-
-    "@codecaine-ai/agent-kernel-protocol": ["@codecaine-ai/agent-kernel-protocol@link:@codecaine-ai/agent-kernel-protocol", {}],
-
-    "@codecaine-ai/agent-kernel-viewer-core": ["@codecaine-ai/agent-kernel-viewer-core@link:@codecaine-ai/agent-kernel-viewer-core", {}],
-
-    "@codecaine-ai/agent-kernel-viewer-shell": ["@codecaine-ai/agent-kernel-viewer-shell@link:@codecaine-ai/agent-kernel-viewer-shell", {}],
-
-    "@codecaine-ai/agent-kernel-viewer-ui": ["@codecaine-ai/agent-kernel-viewer-ui@link:@codecaine-ai/agent-kernel-viewer-ui", {}],
-
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
 
     "@babel/code-frame": ["@babel/code-frame@7.29.7", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.29.7", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw=="],
@@ -85,11 +66,9 @@
 
     "@borewit/text-codec": ["@borewit/text-codec@0.2.2", "", {}, "sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ=="],
 
-    "@codecaine-ai/canvas-agent": ["@codecaine-ai/canvas-agent@link:@codecaine-ai/canvas-agent", {}],
+    "@codecaine-ai/action-log": ["@codecaine-ai/action-log@link:@codecaine-ai/action-log", {}],
 
     "@codecaine-ai/design-system": ["@codecaine-ai/design-system@link:@codecaine-ai/design-system", {}],
-
-    "@codecaine-ai/prompt-kit": ["@codecaine-ai/prompt-kit@link:@codecaine-ai/prompt-kit", {}],
 
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.28.1", "", { "os": "aix", "cpu": "ppc64" }, "sha512-Svl7tq8k/08+p6CXPpRjQ1fKX+1odH/BQbb48fV6fj3CWHhsoIOoY87w1oHXm0qEpkIK3ZfVgp0hed3XBXzXMQ=="],
 

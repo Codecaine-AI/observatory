@@ -2,8 +2,6 @@ import { useState } from "react";
 
 import { fetchProjectLogs, type RegistryProject } from "../api";
 
-export type ObservatorySection = "agents" | "traces";
-
 export interface ProjectActionState {
   kind: "start" | "stop";
   pending: boolean;
@@ -18,9 +16,8 @@ export type ProjectLifecycleTone =
 
 interface ProjectSidebarProps {
   projects: RegistryProject[];
-  selectedProjectId: string | null;
-  section: ObservatorySection;
-  onSelect: (projectId: string, section: ObservatorySection) => void;
+  /** Why the registry could not be read, when the last refresh failed. */
+  error: string | null;
   onStart: (projectId: string) => void;
   onStop: (projectId: string) => void;
   actions: Record<string, ProjectActionState | undefined>;
@@ -52,9 +49,7 @@ export function projectLifecycle(
 
 export function ProjectSidebar({
   projects,
-  selectedProjectId,
-  section,
-  onSelect,
+  error,
   onStart,
   onStop,
   actions,
@@ -89,14 +84,18 @@ export function ProjectSidebar({
       </div>
 
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
+        {error ? (
+          <p className="px-2 pb-2 font-mono text-(length:--ds-font-size-ui-2xs) leading-4 text-destructive">
+            {error}
+          </p>
+        ) : null}
         {projects.length === 0 ? (
           <p className="px-2 py-4 font-mono text-(length:--ds-font-size-ui-xs) text-muted-foreground">
-            No projects registered.
+            No projects registered. Add one to registry.json, then refresh.
           </p>
         ) : (
           <ul className="space-y-2">
             {projects.map((project) => {
-              const selected = project.id === selectedProjectId;
               const action = actions[project.id];
               const lifecycle = projectLifecycle(project, action);
               const supervisorOwned = project.managed.pid !== undefined;
@@ -108,11 +107,7 @@ export function ProjectSidebar({
               return (
                 <li
                   key={project.id}
-                  className={`overflow-hidden rounded-[3px] border ${
-                    selected
-                      ? "border-status-info-border bg-status-info-fill/20"
-                      : "border-border bg-background/30"
-                  }`}
+                  className="overflow-hidden rounded-[3px] border border-border bg-background/30 [&>*:last-child]:border-b-0"
                 >
                   <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2">
                     <span
@@ -166,27 +161,6 @@ export function ProjectSidebar({
                       exitCode={project.managed.exitCode}
                     />
                   ) : null}
-
-                  <div className="grid grid-cols-2 divide-x divide-border/60">
-                    {(["agents", "traces"] as const).map((item) => {
-                      const active = selected && section === item;
-                      return (
-                        <button
-                          key={item}
-                          type="button"
-                          aria-current={active ? "page" : undefined}
-                          onClick={() => onSelect(project.id, item)}
-                          className={`bg-card px-3 py-2 text-left font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.1em] transition-colors ${
-                            active
-                              ? "text-status-info"
-                              : "text-muted-foreground hover:bg-muted/35 hover:text-foreground"
-                          }`}
-                        >
-                          {item}
-                        </button>
-                      );
-                    })}
-                  </div>
                 </li>
               );
             })}

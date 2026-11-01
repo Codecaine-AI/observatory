@@ -1,18 +1,12 @@
-import {
-  KERNEL_CATALOG_PATHS,
-  KERNEL_TRACE_READ_PATHS,
-  type CatalogAgentDetail,
-  type CatalogAgentListResponse,
-  type KernelTraceSessionDetail,
-  type KernelTraceSessionListResponse,
-} from "@codecaine-ai/agent-kernel-viewer-core";
+import type { StoredRecord } from "@codecaine-ai/action-log";
+
+export type ActionRecord = StoredRecord;
 
 export interface RegistryProject {
   id: string;
   name: string;
   live: boolean;
   writable: boolean;
-  tracesAvailable?: boolean;
   extensionPackage: string | null;
   launchable: boolean;
   managed: ManagedProjectStatus;
@@ -39,20 +33,6 @@ export interface ManagedProjectStatus {
 
 interface RegistryProjectsResponse {
   projects: RegistryProject[];
-}
-
-/**
- * The shared viewer packages append viewer-core paths such as
- * `/kernel/blobs/:hash` and `/kernel/catalog/agents` themselves. This prefix
- * therefore stops before `/kernel`.
- */
-export function viewerApiPrefix(projectId: string): string {
-  return `/registry/kernels/${encodeURIComponent(projectId)}`;
-}
-
-/** Full kernel route base for direct Observatory fetches and extensions. */
-export function kernelApiBase(projectId: string): string {
-  return `${viewerApiPrefix(projectId)}/kernel`;
 }
 
 export async function fetchRegistryProjects(signal?: AbortSignal): Promise<RegistryProject[]> {
@@ -105,44 +85,22 @@ export async function fetchProjectLogs(
   return body.lines;
 }
 
-export async function fetchCatalogAgents(
-  projectId: string,
-  signal?: AbortSignal,
-): Promise<CatalogAgentListResponse> {
-  return requestJson<CatalogAgentListResponse>(
-    `${viewerApiPrefix(projectId)}${KERNEL_CATALOG_PATHS.listAgents}`,
-    signal,
-  );
+export interface ActionFilter {
+  thread?: string;
+  target?: string;
 }
 
-export async function fetchCatalogAgentDetail(
-  projectId: string,
-  agentName: string,
+/** Reads the machine's shared action log through GET /api/actions, oldest record first. */
+export async function fetchActions(
+  filter: ActionFilter,
   signal?: AbortSignal,
-): Promise<CatalogAgentDetail> {
-  return requestJson<CatalogAgentDetail>(
-    `${viewerApiPrefix(projectId)}${KERNEL_CATALOG_PATHS.agentDetail(agentName)}`,
-    signal,
-  );
-}
-
-export async function fetchTraceSessions(
-  projectId: string,
-  signal?: AbortSignal,
-): Promise<KernelTraceSessionListResponse> {
-  return requestJson<KernelTraceSessionListResponse>(
-    `${viewerApiPrefix(projectId)}${KERNEL_TRACE_READ_PATHS.listTraceSessions}`,
-    signal,
-  );
-}
-
-export async function fetchTraceSessionDetail(
-  projectId: string,
-  sessionId: string,
-  signal?: AbortSignal,
-): Promise<KernelTraceSessionDetail> {
-  return requestJson<KernelTraceSessionDetail>(
-    `${viewerApiPrefix(projectId)}${KERNEL_TRACE_READ_PATHS.traceSessionDetail(sessionId)}`,
+): Promise<{ path: string; records: ActionRecord[] }> {
+  const params = new URLSearchParams();
+  if (filter.thread) params.set("thread", filter.thread);
+  if (filter.target) params.set("target", filter.target);
+  const query = params.toString();
+  return requestJson<{ path: string; records: ActionRecord[] }>(
+    `/api/actions${query ? `?${query}` : ""}`,
     signal,
   );
 }
@@ -195,7 +153,6 @@ function normalizeProject(value: RegistryProject): RegistryProject {
     ...value,
     live: value.live === true,
     writable: value.writable === true,
-    tracesAvailable: value.tracesAvailable !== false,
     launchable: value.launchable === true,
     managed: normalizeManagedStatus(value.managed),
     extensionPackage:

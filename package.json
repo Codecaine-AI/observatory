@@ -11,15 +11,8 @@
     "typecheck": "bunx --bun tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@codecaine-ai/agent-kernel-db": "link:@codecaine-ai/agent-kernel-db",
-    "@codecaine-ai/agent-kernel": "link:@codecaine-ai/agent-kernel",
-    "@codecaine-ai/agent-kernel-protocol": "link:@codecaine-ai/agent-kernel-protocol",
-    "@codecaine-ai/agent-kernel-viewer-core": "link:@codecaine-ai/agent-kernel-viewer-core",
-    "@codecaine-ai/agent-kernel-viewer-shell": "link:@codecaine-ai/agent-kernel-viewer-shell",
-    "@codecaine-ai/agent-kernel-viewer-ui": "link:@codecaine-ai/agent-kernel-viewer-ui",
-    "@codecaine-ai/canvas-agent": "link:@codecaine-ai/canvas-agent",
+    "@codecaine-ai/action-log": "link:@codecaine-ai/action-log",
     "@codecaine-ai/design-system": "link:@codecaine-ai/design-system",
-    "@codecaine-ai/prompt-kit": "link:@codecaine-ai/prompt-kit",
     "elysia": "^1.2.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
