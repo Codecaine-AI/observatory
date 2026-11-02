@@ -1,11 +1,30 @@
 # Observatory
 
-Observatory is a local development UI for browsing agent catalogs, prompts,
-and kernel traces across registered Codecaine projects. It reads trace SQLite
-databases directly and proxies catalog requests to each project's running
-harness.
+Observatory is a local development UI with two data sources:
 
-Viewer functionality follows the [viewer layering policy](docs/VIEWER-LAYERING.md).
+- **The action log.** Every Codecaine MCP server (canvas-mcp, docs-mcp,
+  prompt-kit-mcp) appends one record per tool call to a shared SQLite file,
+  `~/.codecaine/action-log.sqlite`. `CODECAINE_ACTION_LOG` overrides the
+  path. Observatory reads it through `@codecaine-ai/action-log` and never
+  appends records. A missing file shows as an empty log and is not created.
+- **Registered projects.** `registry.json` lists the harnesses Observatory
+  health-checks, starts, stops, and proxies requests to.
+
+The Action log page lists records newest first (time, thread, agent, tool,
+target, result) and filters by thread id and target. Click a thread or target
+in the table to filter by it. A read returns at most 1000 records, the oldest
+first, so the page says when it hit that cap. Filter to narrow it.
+
+## API
+
+- `GET /api/actions?thread=&target=&run=&since=&until=&limit=` returns
+  `{ path, records }` from the action log. Filters combine with AND. `since`
+  is inclusive, `until` is exclusive, and `limit` defaults to 1000.
+- `GET /registry/projects` lists registered projects with liveness and launch
+  state.
+- `POST /registry/projects/:id/launch`, `POST /registry/projects/:id/stop`
+  and `GET /registry/projects/:id/logs` drive the launcher.
+- `/registry/kernels/:id/kernel/*` proxies to the project's `readApiBaseUrl`.
 
 ## Run
 

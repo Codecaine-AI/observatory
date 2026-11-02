@@ -3,17 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-import {
-  containers,
-  ensureKernelObservabilitySchema,
-  openKernelDatabase,
-  piAgentSessions,
-  traceBlobs,
-  traceEvents,
-} from "@codecaine-ai/agent-kernel-db";
-import { createKernelCatalogService } from "@codecaine-ai/agent-kernel";
-import { buildRegistry } from "@codecaine-ai/agent-kernel/agent-registry";
-import { createKernelCatalogApi } from "@codecaine-ai/agent-kernel/catalog-api";
+import { openActionLog } from "@codecaine-ai/action-log";
 
 import { createObservatoryApp, type ObservatoryApp } from "../src/server/app";
 import type { FetchLike } from "../src/server/liveness";
@@ -76,6 +66,7 @@ function buildApp(
 }
 
 afterEach(async () => {
+  delete process.env.CODECAINE_ACTION_LOG;
   await Promise.all(openApps.splice(0).map((app) => app.close()));
   for (const directory of temporaryDirectories.splice(0)) {
     rmSync(directory, { recursive: true, force: true });
@@ -375,163 +366,47 @@ describe("prompt-edit session passthrough", () => {
       "http://127.0.0.1:9876/kernel/prompt-edit-sessions/session-1",
     ]);
   });
+});
 
-  test("discovers the prompt-editor bundle through the catalog passthrough", async () => {
-    // Real upstream: the kernel catalog api over the first-party
-    // prompt-kit-agent catalog root, which ships the prompt-editor bundle every
-    // writable harness registers (canvas kernel.ts pattern).
-    const catalogRoot = join(
-      import.meta.dir,
-      "..",
-      "..",
-      "prompt-kit",
-      "packages",
-      "prompt-kit-agent",
-      "catalog",
-    );
-    const registry = await buildRegistry({ roots: [catalogRoot] });
-    const service = createKernelCatalogService({
-      registry: async () => registry,
-      db: () => {
-        throw new Error("no trace db in this fixture");
-      },
-    });
-    const upstream = createKernelCatalogApi(service, { prefix: "/kernel" });
-    const fetchMock: FetchLike = async (input, init) => {
-      const url = String(input);
-      if (url.endsWith("/health")) return Response.json({ status: "ok" });
-      return upstream.handle(new Request(url, init));
-    };
-    const { app } = buildApp(project(), fetchMock);
+describe("action log ingest", () => {
+  test("returns the records of one thread from the shared action log", async () => {
+    const logPath = join(makeTemporaryDirectory(), "action-log.sqlite");
+    process.env.CODECAINE_ACTION_LOG = logPath;
+    const writer = openActionLog({ path: logPath });
+    for (const threadId of ["thread-a", "thread-b"]) {
+      writer.record({
+        runId: `run-${threadId}`,
+        threadId,
+        agent: "claude-code",
+        tool: "place_shape",
+        target: "canvases/payments-flow",
+        result: `ok for ${threadId}`,
+        at: "2026-11-01T12:00:00.000Z",
+      });
+    }
+    writer.close();
+    const { app } = buildApp(project(), async () => Response.json({ status: "ok" }));
 
     const response = await app.handle(
-      new Request(
-        "http://observatory/registry/kernels/fixture/kernel/catalog/agents",
-      ),
+      new Request("http://observatory/api/actions?thread=thread-b"),
     );
 
     expect(response.status).toBe(200);
-    const body = (await response.json()) as {
-      agents: Array<{ name: string; valid: boolean }>;
-    };
-    const promptEditor = body.agents.find(
-      (agent) => agent.name === "prompt-editor",
-    );
-    expect(promptEditor).toMatchObject({ name: "prompt-editor", valid: true });
-  });
-});
-
-describe("local read-only trace routes", () => {
-  test("serves session list, detail, container trace, and blobs from SQLite", async () => {
-    const directory = makeTemporaryDirectory();
-    const dbPath = join(directory, "trace.db");
-    const writer = openKernelDatabase({ path: dbPath });
-    await ensureKernelObservabilitySchema(writer.db);
-    const timestamp = "2026-07-30T12:00:00.000Z";
-    const hash = `b1-${"a".repeat(64)}`;
-
-    await writer.db.insert(containers).values({
-      id: "session-1",
-      kernelId: "fixture-kernel",
-      kind: "layout-session",
-      appKey: ["session-1"],
-      label: "Fixture trace",
-      status: "done",
-      metadata: { instruction: "Testing Observatory" },
-      createdAt: timestamp,
-      startedAt: timestamp,
-      endedAt: timestamp,
-    });
-    await writer.db.insert(piAgentSessions).values({
-      id: "pi-1",
-      containerId: "session-1",
-      agentName: "writer",
-      status: "ended",
-      createdAt: timestamp,
-      endedAt: timestamp,
-    });
-    await writer.db.insert(traceEvents).values({
-      eventId: "event-1",
-      containerId: "session-1",
-      piSessionId: "pi-1",
-      type: "app:test",
-      source: "fixture",
-      traceLevel: 0,
-      eventData: { message: "visible" },
-      timestamp,
-    });
-    await writer.db.insert(traceBlobs).values({
-      hash,
-      kind: "text",
-      mimeType: "text/plain",
-      byteLength: 7,
-      data: Buffer.from("fixture"),
-      createdAt: timestamp,
-    });
-    writer.close();
-
-    const entry = project({ kernelRoot: directory, dbPath });
-    const { app } = buildApp(
-      entry,
-      async () => Response.json({ status: "ok" }),
-    );
-    const base =
-      "http://observatory/registry/kernels/fixture/kernel";
-
-    const listResponse = await app.handle(
-      new Request(`${base}/trace-sessions`),
-    );
-    expect(listResponse.status).toBe(200);
-    expect(await listResponse.json()).toMatchObject({
-      trace_sessions: [
+    expect(await response.json()).toEqual({
+      path: logPath,
+      records: [
         {
-          id: "session-1",
-          topic: "Testing Observatory",
-          piSessionCount: 1,
-          eventCount: 1,
+          id: 2,
+          runId: "run-thread-b",
+          threadId: "thread-b",
+          agent: "claude-code",
+          tool: "place_shape",
+          target: "canvases/payments-flow",
+          result: "ok for thread-b",
+          snapshotId: null,
+          at: "2026-11-01T12:00:00.000Z",
         },
       ],
     });
-
-    for (const path of [
-      "/trace-sessions/session-1",
-      "/containers/session-1/trace",
-    ]) {
-      const detailResponse = await app.handle(new Request(`${base}${path}`));
-      expect(detailResponse.status).toBe(200);
-      expect(await detailResponse.json()).toMatchObject({
-        session: { id: "session-1" },
-        events: [{ eventId: "event-1", eventData: { message: "visible" } }],
-      });
-    }
-
-    const blobResponse = await app.handle(
-      new Request(`${base}/blobs/${hash}`),
-    );
-    expect(blobResponse.status).toBe(200);
-    expect(blobResponse.headers.get("content-type")).toBe("text/plain");
-    expect(await blobResponse.text()).toBe("fixture");
-  });
-
-  test("treats a missing database as no traces yet", async () => {
-    const entry = project();
-    const calls: string[] = [];
-    const { app } = buildApp(
-      entry,
-      async (input) => {
-        calls.push(String(input));
-        return Response.json({ status: "ok" });
-      },
-    );
-
-    const response = await app.handle(
-      new Request(
-        "http://observatory/registry/kernels/fixture/kernel/trace-sessions",
-      ),
-    );
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ trace_sessions: [] });
-    expect(calls).toEqual([]);
   });
 });

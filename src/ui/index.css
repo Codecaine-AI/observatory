@@ -1,11 +1,6 @@
 @import "tailwindcss";
 
 @source "./";
-@source "../../../agent-kernel/packages/viewer-shell/src";
-@source "../../../agent-kernel/packages/viewer-ui/src";
-@source "../../../prompt-kit/packages/prompt-kit/src";
-@source "../../../annotations/src";
-@source "../../../canvas/packages/canvas-agent/src";
 
 /*
  * The viewer contract (--background, --trace-*, --status-*, --editor-*, ...) comes from
