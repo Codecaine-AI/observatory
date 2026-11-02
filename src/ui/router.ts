@@ -3,17 +3,20 @@
  *
  *   /                                  → redirects to the first project
  *   /:projectId                        → project page (trace list at rest)
- *   /:projectId/agent/:agentName       → agent page (prompt lab / detail)
+ *   /:projectId/agent/:agentName/:view? → agent page and document view
  *   /:projectId/trace/:traceId         → trace page (list + opened trace)
  *
  * Deliberately no dependency: three route shapes over pushState/popstate.
  */
 import { useCallback, useEffect, useState } from "react";
+import type { LabView } from "@codecaine-ai/prompt-kit/ui/lab";
+
+const AGENT_VIEWS = new Set<string>(["system", "context", "state", "tools"]);
 
 export type Route =
   | { kind: "home" }
   | { kind: "project"; projectId: string }
-  | { kind: "agent"; projectId: string; agentName: string }
+  | { kind: "agent"; projectId: string; agentName: string; view: LabView }
   | { kind: "trace"; projectId: string; traceId: string };
 
 export function parseRoute(pathname: string): Route {
@@ -21,9 +24,9 @@ export function parseRoute(pathname: string): Route {
     .split("/")
     .filter((part) => part.length > 0)
     .map(decodeURIComponent);
-  const [projectId, section, id] = parts;
+  const [projectId, section, id, view] = parts;
   if (!projectId) return { kind: "home" };
-  if (section === "agent" && id) return { kind: "agent", projectId, agentName: id };
+  if (section === "agent" && id) return { kind: "agent", projectId, agentName: id, view: view && AGENT_VIEWS.has(view) ? view as LabView : "system" };
   if (section === "trace" && id) return { kind: "trace", projectId, traceId: id };
   return { kind: "project", projectId };
 }
@@ -32,8 +35,8 @@ export function projectPath(projectId: string): string {
   return `/${encodeURIComponent(projectId)}`;
 }
 
-export function agentPath(projectId: string, agentName: string): string {
-  return `${projectPath(projectId)}/agent/${encodeURIComponent(agentName)}`;
+export function agentPath(projectId: string, agentName: string, view: LabView = "system"): string {
+  return `${projectPath(projectId)}/agent/${encodeURIComponent(agentName)}/${view}`;
 }
 
 export function tracePath(projectId: string, traceId: string): string {

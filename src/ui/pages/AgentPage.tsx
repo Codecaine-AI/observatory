@@ -10,6 +10,7 @@ import {
   clampPromptStyleSidebarWidth,
 } from "@agent-kernel/viewer-ui";
 import { usePromptStyleSettings } from "@codecaine-ai/prompt-kit/ui/style";
+import type { LabView } from "@codecaine-ai/prompt-kit/ui/lab";
 
 import {
   fetchCatalogAgentDetail,
@@ -21,9 +22,12 @@ interface AgentPageProps {
   project: RegistryProject;
   /** Selected in the sidebar tree; the page renders exactly this agent. */
   agent: CatalogAgentSummary;
+  theme: "light" | "dark";
+  view: LabView;
+  onViewChange: (view: LabView) => void;
 }
 
-export function AgentPage({ project, agent }: AgentPageProps) {
+export function AgentPage({ project, agent, theme, view, onViewChange }: AgentPageProps) {
   const {
     settings: styleSettings,
     update: updateStyleSettings,
@@ -44,7 +48,7 @@ export function AgentPage({ project, agent }: AgentPageProps) {
   }
 
   return (
-    <section className="flex h-full min-h-[560px] gap-3 font-mono">
+    <section data-theme={theme} className="observatory-prompt-theme flex h-full min-h-[560px] gap-3 text-foreground">
       <div className="relative min-w-0 flex-1 overflow-hidden rounded-[3px] border border-border bg-card">
         {project.writable && (
           <button
@@ -68,6 +72,9 @@ export function AgentPage({ project, agent }: AgentPageProps) {
             agentName={agent.name}
             className="h-full"
             styleSettings={styleSettings}
+            followTheme
+            view={view}
+            onViewChange={onViewChange}
           />
         ) : (
           <ReadOnlyAgentDetail

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./light-theme.css";
 
 @source "./";
 @source "../../../agent-kernel/packages/viewer-shell/src";
@@ -8,6 +9,8 @@
 @source "../../../canvas/packages/canvas-agent/src";
 
 :root {
+  --prompt-editor-glass-bg: rgb(24 24 24 / 0.72);
+  --prompt-editor-panel-shadow: 0 18px 48px rgb(0 0 0 / 0.45), 0 2px 8px rgb(0 0 0 / 0.35);
   --radius: 0.5rem;
   --background: #1b1b1c;
   --foreground: #d4d4d4;

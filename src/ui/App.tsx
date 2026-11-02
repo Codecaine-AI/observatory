@@ -62,6 +62,16 @@ export function App() {
     ...loadStyleSettings(STYLE_CONFIG),
     theme: "dark",
   }));
+  const [promptTheme, setPromptTheme] = useState<"light" | "dark">(() => {
+    try {
+      return localStorage.getItem("observatory.promptTheme.v1") === "dark" ? "dark" : "light";
+    } catch {
+      return "light";
+    }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("observatory.promptTheme.v1", promptTheme); } catch {}
+  }, [promptTheme]);
 
   const refreshProjects = useCallback(async (quiet = false) => {
     if (!quiet) {
@@ -160,8 +170,8 @@ export function App() {
 
   useEffect(() => {
     saveStyleSettings(STYLE_CONFIG, styleSettings);
-    document.documentElement.dataset.theme = "dark";
-    document.documentElement.style.colorScheme = "dark";
+    document.documentElement.dataset.theme = styleSettings.theme;
+    document.documentElement.style.colorScheme = styleSettings.theme;
   }, [styleSettings]);
 
   // Routing invariants, applied once the registry has answered: "/" lands on
@@ -257,7 +267,7 @@ export function App() {
     route.kind === "agent" ? "agent" : route.kind === "trace" ? "trace" : "traces";
   const title = activeProject
     ? route.kind === "agent"
-      ? `${activeProject.name} / ${route.agentName}`
+      ? `${activeProject.name} / ${route.agentName} / ${route.view[0].toUpperCase()}${route.view.slice(1)}`
       : route.kind === "trace"
         ? `${activeProject.name} / ${route.traceId}`
         : activeProject.name
@@ -299,6 +309,24 @@ export function App() {
               {title}
             </h2>
           </div>
+          {route.kind === "agent" && <div className="ml-auto flex shrink-0 items-center gap-1 rounded-[3px] border border-border p-0.5" role="group" aria-label="Prompt appearance">
+            <span className="px-1.5 font-mono text-[10px] text-muted-foreground">Editor</span>
+            {(["light", "dark"] as const).map((theme) => (
+              <button
+                key={theme}
+                type="button"
+                aria-pressed={promptTheme === theme}
+                onClick={() => setPromptTheme(theme)}
+                className={`rounded-[2px] px-2.5 py-1 font-mono text-[10px] capitalize transition-colors focus-visible:outline-2 focus-visible:outline-ring ${
+                  promptTheme === theme
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                }`}
+              >
+                {theme}
+              </button>
+            ))}
+          </div>}
         </header>
 
         <div className="min-h-0 flex-1 overflow-hidden p-4">
@@ -313,6 +341,9 @@ export function App() {
               key={`${activeProject.id}:${activeAgent.name}`}
               project={activeProject}
               agent={activeAgent}
+              theme={promptTheme}
+              view={route.view}
+              onViewChange={(next) => navigate(agentPath(activeProject.id, activeAgent.name, next))}
             />
           ) : route.kind === "agent" ? (
             <CenteredMessage>Loading agent…</CenteredMessage>

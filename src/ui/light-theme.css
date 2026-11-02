@@ -1,0 +1,141 @@
+/* Warm paper, ink and accents match Docs System's notion-palette.css.
+ * Keep this host palette independent of Docs' component styles and RGB token
+ * format: viewer-ui consumes triplets, while the app consumes CSS colors. */
+.observatory-prompt-theme[data-theme="light"] {
+  color-scheme: light;
+  --prompt-editor-panel-bg: #f7f6f3;
+  --prompt-editor-panel-border: rgba(206, 205, 202, 0.5);
+  --prompt-editor-panel-raise: #ebeced;
+  --prompt-editor-panel-input-bg: #fbfaf8;
+  --prompt-annotate-accent: #7862b8;
+  --prompt-annotate-accent-lit: #5b4699;
+  --prompt-annotate-accent-dim: #9488bd;
+  --prompt-annotate-line: rgba(120, 98, 184, 0.38);
+  --prompt-annotate-wash: rgba(120, 98, 184, 0.08);
+  --prompt-annotate-fill: rgba(120, 98, 184, 0.055);
+  --prompt-editor-glass-bg: rgb(247 246 243 / 0.94);
+  --prompt-editor-panel-shadow: 0 8px 28px rgb(55 53 47 / 0.12);
+  --background: #fbfaf8;
+  --foreground: #37352f;
+  --card: #f7f6f3;
+  --card-foreground: #37352f;
+  --popover: #fbfaf8;
+  --popover-foreground: #37352f;
+  --primary: #37352f;
+  --primary-foreground: #fbfaf8;
+  --secondary: #ebeced;
+  --secondary-foreground: #37352f;
+  --muted: #ebeced;
+  /* A darker gray keeps small controls legible on paper. */
+  --muted-foreground: #72716d;
+  --accent: #ddebf1;
+  --accent-foreground: #245a81;
+  --destructive: #bd3030;
+  --border: rgba(206, 205, 202, 0.5);
+  --input: rgba(206, 205, 202, 0.7);
+  --ring: #0078df;
+
+  --trace-container: 114 113 109;
+  --trace-orchestration: 105 64 165;
+  --trace-user: 36 90 129;
+  --trace-assistant: 15 123 108;
+  --trace-tool: 11 110 153;
+  --trace-lifecycle: 114 113 109;
+  --trace-meta: 114 113 109;
+  --status-neutral: 114 113 109;
+  --status-neutral-fill: 235 236 237;
+  --status-neutral-border: 206 205 202;
+  --status-success: 15 123 108;
+  --status-success-fill: 221 237 234;
+  --status-success-border: 173 205 197;
+  --status-warning: 157 79 9;
+  --status-warning-fill: 250 235 221;
+  --status-warning-border: 230 194 161;
+  --status-info: 11 110 153;
+  --status-info-fill: 221 235 241;
+  --status-info-border: 177 205 219;
+  --syntax-key: 105 64 165;
+  --syntax-string: 15 123 108;
+  --syntax-number: 11 110 153;
+  --syntax-boolean: 157 79 9;
+
+  --agentprism-background: 251 250 248;
+  --agentprism-foreground: 55 53 47;
+  --agentprism-muted: 235 236 237;
+  --agentprism-muted-foreground: 114 113 109;
+  --agentprism-border-subtle: 222 221 218;
+  --agentprism-code-base: 114 113 109;
+  --agentprism-badge-agent-foreground: 11 110 153;
+  --agentprism-badge-chain-foreground: 15 123 108;
+  --agentprism-badge-llm-foreground: 15 123 108;
+  --agentprism-badge-tool-foreground: 157 79 9;
+
+  --editor-bg: #fbfaf8;
+  --editor-fg: #37352f;
+  --editor-gutter-bg: #fbfaf8;
+  --editor-line-number: #85837e;
+  --editor-line-number-active: #37352f;
+  --editor-syntax-punctuation: #72716d;
+  --editor-syntax-tag: #713d73;
+  --editor-syntax-tag-landmark: #652665;
+  --editor-syntax-tag-sublandmark: #713d73;
+  --editor-syntax-attribute: #245a81;
+  --editor-syntax-value: #94602e;
+  --editor-syntax-variable: #8c6816;
+  --editor-syntax-reference: #0f7b6c;
+  --editor-syntax-list-marker: #666560;
+  --editor-inline-code: #0f7b6c;
+  --editor-inline-chip-bg: rgb(15 123 108 / 0.08);
+  --editor-guide-color: #713d73;
+  --editor-guide: rgb(55 53 47 / 0.1);
+  --editor-landmark-color: #245a81;
+  --editor-landmark: rgb(105 64 165 / 0.04);
+  --editor-rule: rgb(55 53 47 / 0.06);
+  --editor-selection-color: #0078df;
+  --editor-selection-bg: rgb(0 120 223 / 0.12);
+  --editor-selection-accent: #0078df;
+  --editor-active-line-color: #37352f;
+  --editor-active-line-bg: rgb(55 53 47 / 0.035);
+  --editor-hover-color: #37352f;
+  --editor-hover-bg: rgb(55 53 47 / 0.05);
+  --editor-grip-color: #85837e;
+  --editor-drop-line-color: #0078df;
+  --editor-diff-del-bg: rgb(189 48 48 / 0.08);
+  --editor-diff-del-fg: #bd3030;
+  --editor-diff-add-bg: rgb(15 123 108 / 0.08);
+  --editor-diff-add-fg: #0f7b6c;
+  --editor-thread-accent: #8c6816;
+
+  /* Match Docs System's separate violet annotation layer. */
+  --annotation-accent: #7862b8;
+  --annotation-accent-lit: #5b4699;
+  --annotation-accent-dim: #9488bd;
+  --annotation-active-bg: rgba(120, 98, 184, 0.1);
+  --annotation-surface: #fbfaf8;
+  --annotation-text: #37352f;
+  --annotation-muted: #72716d;
+  --annotation-border: rgba(120, 98, 184, 0.38);
+  --annotation-danger: #bd3030;
+}
+
+/* Plum paired tags separate structure from prose, blue attributes, green
+ * references/code, and amber variables. Only the prompt editor follows this palette. */
+.observatory-prompt-theme {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.observatory-prompt-theme[data-theme="dark"] {
+  --editor-fg: #e1e0dc;
+  --editor-guide-color: #d0a4d4;
+  --editor-syntax-punctuation: #a1a29e;
+  --editor-syntax-tag: #d0a4d4;
+  --editor-syntax-tag-landmark: #ecc4ef;
+  --editor-syntax-tag-sublandmark: #dab2dd;
+  --editor-syntax-attribute: #a8bfcb;
+  --editor-syntax-value: #d3b390;
+  --editor-syntax-variable: #e0c880;
+  --editor-syntax-reference: #86c4ad;
+  --editor-inline-code: #86c4ad;
+  --editor-syntax-list-marker: #b0b0a9;
+  --editor-line-number: #a1a29e;
+}
