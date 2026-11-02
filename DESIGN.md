@@ -139,7 +139,7 @@ Projects (from /registry/projects, live/offline badge)
 
 ## Extensions v0
 
-See the [viewer layering policy](docs/VIEWER-LAYERING.md).
+See the [viewer layering policy](docs/10-viewer-layering).
 
 Per-harness rich rendering ships as code the harness exports; Observatory
 always falls back to generic rendering (unknown `app:*` events already degrade

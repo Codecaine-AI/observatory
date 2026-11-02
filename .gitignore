@@ -5,3 +5,7 @@ dist/
 coverage/
 .bun-cache/
 .bun-links/
+
+# Derived Codecaine docs state (rebuildable)
+docs/.index/
+docs/.changesets/
