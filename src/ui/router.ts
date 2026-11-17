@@ -1,11 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
 
-/** The 2 Observatory pages. `/` is the Action log, `/traces/:projectId` the Traces page. */
+/**
+ * The 3 Observatory pages. `/` is the Action log, `/traces/:projectId` the
+ * kernel Traces page, `/runs/:engine/:runId` the engine Runs page.
+ */
 export type Route =
   | { page: "actions" }
-  | { page: "traces"; projectId: string | null };
+  | { page: "traces"; projectId: string | null }
+  | { page: "runs"; run: { engine: string; runId: string } | null };
 
 export function parseRoute(pathname: string): Route {
+  const runs = /^\/runs(?:\/([^/]+)\/([^/]+))?\/?$/.exec(pathname);
+  if (runs) {
+    return {
+      page: "runs",
+      run:
+        runs[1] && runs[2]
+          ? { engine: decodeSegment(runs[1]), runId: decodeSegment(runs[2]) }
+          : null,
+    };
+  }
   const match = /^\/traces(?:\/([^/]+))?\/?$/.exec(pathname);
   if (match) {
     return {
@@ -18,7 +32,7 @@ export function parseRoute(pathname: string): Route {
 
 /**
  * Decodes one path segment. A malformed escape such as `%` stays as written,
- * so the page shows "not found" for it instead of throwing.
+ * so the page shows "not found" (or the run's read error) instead of throwing.
  */
 function decodeSegment(segment: string): string {
   try {
@@ -30,6 +44,11 @@ function decodeSegment(segment: string): string {
 
 export function routePath(route: Route): string {
   if (route.page === "actions") return "/";
+  if (route.page === "runs") {
+    return route.run
+      ? `/runs/${encodeURIComponent(route.run.engine)}/${encodeURIComponent(route.run.runId)}`
+      : "/runs";
+  }
   return route.projectId
     ? `/traces/${encodeURIComponent(route.projectId)}`
     : "/traces";

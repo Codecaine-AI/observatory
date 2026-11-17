@@ -13,6 +13,7 @@ const LINKED_SOURCE_PACKAGES = [
   "@codecaine-ai/agent-kernel-viewer-core",
   "@codecaine-ai/agent-kernel-viewer-ui",
   "@codecaine-ai/agent-kernel-viewer-shell",
+  "@codecaine-ai/agent-kernel-viewer-read-service",
   "@codecaine-ai/prompt-kit",
 ];
 const LINKED_SOURCE_DIRS = LINKED_SOURCE_PACKAGES.map((name) =>

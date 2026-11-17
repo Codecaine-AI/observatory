@@ -16,6 +16,18 @@ describe("the page routes", () => {
     }
   });
 
+  test("read and write the Runs page with and without an open run", () => {
+    const routes: [string, Route][] = [
+      ["/runs", { page: "runs", run: null }],
+      ["/runs/archon/c5993f42-7c8b", { page: "runs", run: { engine: "archon", runId: "c5993f42-7c8b" } }],
+      ["/runs/archon/run%2F1", { page: "runs", run: { engine: "archon", runId: "run/1" } }],
+    ];
+    for (const [path, route] of routes) {
+      expect(parseRoute(path)).toEqual(route);
+      expect(routePath(route)).toBe(path);
+    }
+  });
+
   test("send an unknown path to the Action log", () => {
     expect(parseRoute("/nowhere")).toEqual({ page: "actions" });
     expect(parseRoute("/traces/a/b")).toEqual({ page: "actions" });
@@ -24,6 +36,7 @@ describe("the page routes", () => {
   test("keep a malformed percent escape as written instead of throwing", () => {
     expect(parseRoute("/traces/%")).toEqual({ page: "traces", projectId: "%" });
     expect(parseRoute("/traces/%E0%A4%A")).toEqual({ page: "traces", projectId: "%E0%A4%A" });
+    expect(parseRoute("/runs/archon/%")).toEqual({ page: "runs", run: { engine: "archon", runId: "%" } });
   });
 });
 
