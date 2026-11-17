@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   reviveEngineRun,
   type EngineRunListResponse,
@@ -40,6 +40,9 @@ type RunState =
 type EngineRunSummary = EngineRunListResponse["engine_runs"][number];
 type TraceSpan = ReturnType<typeof reviveEngineRun>["spans"][number];
 
+/** How often the list and the open run are read again. */
+const REFRESH_MS = 30_000;
+
 const rowId = (run: EngineRunRef): string => `${run.engine}/${run.runId}`;
 
 /**
@@ -49,9 +52,17 @@ const rowId = (run: EngineRunRef): string => `${run.engine}/${run.runId}`;
 export function RunsPage({ run, onOpen }: RunsPageProps) {
   const [listState, setListState] = useState<ListState>({ status: "loading", runs: [] });
   const [runState, setRunState] = useState<RunState>({ status: "idle" });
+  // A run keeps changing after it starts: its status, and gateway rows that
+  // arrive minutes after their calls. Both reads repeat quietly.
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const interval = window.setInterval(() => setTick((value) => value + 1), REFRESH_MS);
+    return () => window.clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
+    const quiet = tick > 0;
     void fetchEngineRuns(controller.signal)
       .then((body) => {
         if (!Array.isArray(body.engine_runs)) {
@@ -61,31 +72,39 @@ export function RunsPage({ run, onOpen }: RunsPageProps) {
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
-        setListState({ status: "error", runs: [], message: errorMessage(cause, "Engine runs unavailable.") });
+        const message = errorMessage(cause, "Engine runs unavailable.");
+        // A failed re-read keeps the last list on screen.
+        setListState((current) => ({ status: "error", runs: quiet ? current.runs : [], message }));
       });
     return () => controller.abort();
-  }, []);
+  }, [tick]);
 
   const engine = run?.engine ?? null;
   const runId = run?.runId ?? null;
+  /** The run whose tree is on screen, so a re-read of it does not blank the tree. */
+  const shownRun = useRef<string | null>(null);
   useEffect(() => {
     if (!engine || !runId) {
+      shownRun.current = null;
       setRunState({ status: "idle" });
       return;
     }
+    const key = rowId({ engine, runId });
+    const quiet = shownRun.current === key;
     const controller = new AbortController();
-    setRunState({ status: "loading" });
+    if (!quiet) setRunState({ status: "loading" });
     void fetchEngineRun(engine, runId, controller.signal)
       .then((body) => {
         const revived = reviveEngineRun(body);
+        shownRun.current = key;
         setRunState({ status: "ready", run: revived.run, spans: revived.spans });
       })
       .catch((cause: unknown) => {
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted || quiet) return;
         setRunState({ status: "error", message: errorMessage(cause, "Engine run unavailable.") });
       });
     return () => controller.abort();
-  }, [engine, runId]);
+  }, [engine, runId, tick]);
 
   const rows = useMemo<TraceWorkspaceRow[]>(
     () =>
