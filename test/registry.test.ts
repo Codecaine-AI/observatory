@@ -46,7 +46,7 @@ describe("loadRegistry", () => {
   test("resolves registry paths and enriches omitted fields from a v2 manifest", async () => {
     const directory = makeTemporaryDirectory();
     const kernelRoot = join(directory, "kernel", ".agent-kernel");
-    Bun.write(
+    await Bun.write(
       join(kernelRoot, "kernel.json"),
       JSON.stringify({
         manifestVersion: 2,

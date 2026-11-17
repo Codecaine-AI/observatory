@@ -14,6 +14,7 @@ import {
   fetchEngineRun,
   fetchEngineRuns,
 } from "../api";
+import { useRefreshTick } from "../useRefreshTick";
 
 export interface EngineRunRef {
   engine: string;
@@ -54,11 +55,7 @@ export function RunsPage({ run, onOpen }: RunsPageProps) {
   const [runState, setRunState] = useState<RunState>({ status: "idle" });
   // A run keeps changing after it starts: its status, and gateway rows that
   // arrive minutes after their calls. Both reads repeat quietly.
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const interval = window.setInterval(() => setTick((value) => value + 1), REFRESH_MS);
-    return () => window.clearInterval(interval);
-  }, []);
+  const tick = useRefreshTick(REFRESH_MS);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -92,7 +89,12 @@ export function RunsPage({ run, onOpen }: RunsPageProps) {
     const key = rowId({ engine, runId });
     const quiet = shownRun.current === key;
     const controller = new AbortController();
-    if (!quiet) setRunState({ status: "loading" });
+    if (!quiet) {
+      // Another run replaces the tree on screen: until this read succeeds,
+      // no run is shown, so a return to the old run is a full read too.
+      shownRun.current = null;
+      setRunState({ status: "loading" });
+    }
     void fetchEngineRun(engine, runId, controller.signal)
       .then((body) => {
         const revived = reviveEngineRun(body);
