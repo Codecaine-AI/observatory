@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   buildTraceSpans,
   type KernelTraceSessionDetail,
@@ -15,6 +15,10 @@ import {
   viewerApiPrefix,
   type RegistryProject,
 } from "../api";
+import { useRefreshTick } from "../useRefreshTick";
+
+/** How often the session list is read again. */
+const REFRESH_MS = 30_000;
 
 interface TracesPageProps {
   project: RegistryProject;
@@ -42,11 +46,20 @@ export function TracesPage({ project }: TracesPageProps) {
     detail: null,
   });
 
+  // New traces keep arriving while the page is open, and the trace database
+  // can appear after the page opens. The list is read again on a timer and
+  // when `tracesAvailable` changes. A re-read keeps the selection.
+  const tick = useRefreshTick(REFRESH_MS);
+  const loadedProject = useRef<string | null>(null);
+
   useEffect(() => {
     const controller = new AbortController();
-    setSessionState({ status: "loading", sessions: [] });
-    setSelectedId(null);
-    setDetailState({ status: "idle", detail: null });
+    const quiet = loadedProject.current === project.id;
+    if (!quiet) {
+      setSessionState({ status: "loading", sessions: [] });
+      setSelectedId(null);
+      setDetailState({ status: "idle", detail: null });
+    }
 
     void fetchTraceSessions(project.id, controller.signal)
       .then((body) => {
@@ -55,19 +68,21 @@ export function TracesPage({ project }: TracesPageProps) {
         }
         // No auto-select: landing on All Traces shows the list at rest and
         // the empty detail state until the human picks a trace.
+        loadedProject.current = project.id;
         setSessionState({ status: "ready", sessions: body.trace_sessions });
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
-        setSessionState({
+        // A failed re-read keeps the last list on screen.
+        setSessionState((current) => ({
           status: "error",
-          sessions: [],
+          sessions: quiet ? current.sessions : [],
           message: errorMessage(cause, "Trace sessions unavailable."),
-        });
+        }));
       });
 
     return () => controller.abort();
-  }, [project.id]);
+  }, [project.id, project.tracesAvailable, tick]);
 
   useEffect(() => {
     if (!selectedId) {

@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type MouseEvent,
+} from "react";
 
 import {
   fetchRegistryProjects,
@@ -13,7 +19,8 @@ import {
 } from "./components/ProjectSidebar";
 import { ActionsPage } from "./pages/ActionsPage";
 import { TracesPage } from "./pages/TracesPage";
-import { useRoute } from "./router";
+import { isPlainLeftClick, routePath, useRoute, type Route } from "./router";
+import { resolveTracesProject } from "./tracesProject";
 
 type Theme = "light" | "dark";
 
@@ -87,14 +94,19 @@ export function App() {
     document.documentElement.style.colorScheme = theme;
   }, [theme]);
 
-  const activeProject = useMemo(() => {
-    if (route.page !== "traces") return null;
-    return (
-      projectState.projects.find((project) => project.id === route.projectId) ??
-      projectState.projects[0] ??
-      null
-    );
-  }, [projectState.projects, route]);
+  const tracesProject = useMemo(
+    () =>
+      route.page === "traces"
+        ? resolveTracesProject(
+            projectState.projects,
+            route.projectId,
+            projectState.status === "loading",
+          )
+        : null,
+    [projectState.projects, projectState.status, route],
+  );
+  const activeProject =
+    tracesProject?.kind === "project" ? tracesProject.project : null;
 
   const toggleTheme = useCallback(() => {
     setTheme((current) => (current === "dark" ? "light" : "dark"));
@@ -163,7 +175,10 @@ export function App() {
             </p>
             <h2 className="truncate font-display text-[16px] font-bold">
               {route.page === "traces"
-                ? activeProject?.name ?? "No project selected"
+                ? activeProject?.name ??
+                  (tracesProject?.kind === "not-found"
+                    ? tracesProject.projectId
+                    : "No project selected")
                 : "Action log"}
             </h2>
           </div>
@@ -179,18 +194,18 @@ export function App() {
           <nav aria-label="Pages" className="ml-auto flex items-center gap-1">
             <PageLink
               active={route.page === "actions"}
-              onClick={() => navigate({ page: "actions" })}
+              to={{ page: "actions" }}
+              navigate={navigate}
             >
               Action log
             </PageLink>
             <PageLink
               active={route.page === "traces"}
-              onClick={() =>
-                navigate({
-                  page: "traces",
-                  projectId: projectState.projects[0]?.id ?? null,
-                })
-              }
+              to={{
+                page: "traces",
+                projectId: projectState.projects[0]?.id ?? null,
+              }}
+              navigate={navigate}
             >
               Traces
             </PageLink>
@@ -202,6 +217,12 @@ export function App() {
             <ActionsPage />
           ) : projectState.status === "error" && projectState.projects.length === 0 ? (
             <CenteredMessage tone="error">{projectState.message}</CenteredMessage>
+          ) : tracesProject?.kind === "loading" ? (
+            <CenteredMessage>Loading projects…</CenteredMessage>
+          ) : tracesProject?.kind === "not-found" ? (
+            <CenteredMessage tone="error">
+              {`Project not found: "${tracesProject.projectId}" is not in registry.json.`}
+            </CenteredMessage>
           ) : !activeProject ? (
             <CenteredMessage>
               Add a project to registry.json, then refresh.
@@ -217,18 +238,24 @@ export function App() {
 
 function PageLink({
   active,
-  onClick,
+  to,
+  navigate,
   children,
 }: {
   active: boolean;
-  onClick: () => void;
+  to: Route;
+  navigate: (next: Route) => void;
   children: string;
 }) {
   return (
-    <button
-      type="button"
+    <a
+      href={routePath(to)}
       aria-current={active ? "page" : undefined}
-      onClick={onClick}
+      onClick={(event: MouseEvent<HTMLAnchorElement>) => {
+        if (!isPlainLeftClick(event)) return;
+        event.preventDefault();
+        navigate(to);
+      }}
       className={`flex h-(--ds-control-height-lg) items-center rounded-[2px] border px-2 font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.08em] transition-colors ${
         active
           ? "border-status-info-border bg-status-info-fill/20 text-status-info"
@@ -236,7 +263,7 @@ function PageLink({
       }`}
     >
       {children}
-    </button>
+    </a>
   );
 }
 

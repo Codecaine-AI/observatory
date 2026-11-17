@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { fetchProjectLogs, type RegistryProject } from "../api";
+import { isPlainLeftClick, routePath } from "../router";
 
 export interface ProjectActionState {
   kind: "start" | "stop";
@@ -172,10 +173,14 @@ export function ProjectSidebar({
                     />
                   ) : null}
 
-                  <button
-                    type="button"
+                  <a
+                    href={routePath({ page: "traces", projectId: project.id })}
                     aria-current={selected ? "page" : undefined}
-                    onClick={() => onOpenTraces(project.id)}
+                    onClick={(event) => {
+                      if (!isPlainLeftClick(event)) return;
+                      event.preventDefault();
+                      onOpenTraces(project.id);
+                    }}
                     className={`block w-full bg-card px-3 py-2 text-left font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.1em] transition-colors ${
                       selected
                         ? "text-status-info"
@@ -183,7 +188,7 @@ export function ProjectSidebar({
                     }`}
                   >
                     Traces
-                  </button>
+                  </a>
                 </li>
               );
             })}
