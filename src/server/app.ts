@@ -1,6 +1,12 @@
 import { Elysia } from "elysia";
 
+import {
+  createKernelTraceReadApi,
+  type KernelTraceReadQuery,
+} from "@codecaine-ai/agent-kernel/read-api";
+
 import { readActions } from "./actions";
+import { ProjectDatabaseManager } from "./database";
 import {
   LivenessMonitor,
   type FetchLike,
@@ -12,7 +18,10 @@ import {
   type ProjectLauncherOptions,
 } from "./launcher";
 import { proxyKernelRequest } from "./proxy";
-import type { LoadedRegistry } from "./registry";
+import type {
+  LoadedRegistry,
+  ResolvedRegistryProject,
+} from "./registry";
 
 export interface CreateObservatoryAppOptions {
   fetch?: FetchLike;
@@ -30,6 +39,7 @@ export interface ObservatoryApp {
   };
   liveness: LivenessMonitor;
   launcher: ProjectLauncher;
+  databases: ProjectDatabaseManager;
   close(): Promise<void>;
 }
 
@@ -49,11 +59,39 @@ function isWriteGatedKernelPath(path: string): boolean {
   );
 }
 
+function missingDatabaseService(
+  databases: ProjectDatabaseManager,
+  project: ResolvedRegistryProject,
+) {
+  const queryService = () => databases.getService(project);
+  return {
+    async getContainerTrace(containerId: string, query: KernelTraceReadQuery) {
+      return (await queryService()?.getContainerTrace(containerId, query)) ?? null;
+    },
+    async listSessionContainers(query: KernelTraceReadQuery) {
+      return (
+        (await queryService()?.listSessionContainers?.(query)) ?? {
+          trace_sessions: [],
+        }
+      );
+    },
+    async getBlob(hash: string) {
+      return (await queryService()?.getBlob?.(hash)) ?? null;
+    },
+    async getRunTurnContext(runId: string, turnNumber: number) {
+      return (
+        (await queryService()?.getRunTurnContext?.(runId, turnNumber)) ?? null
+      );
+    },
+  };
+}
+
 export function createObservatoryApp(
   registry: LoadedRegistry,
   options: CreateObservatoryAppOptions = {},
 ): ObservatoryApp {
   const fetchImpl = options.fetch ?? globalThis.fetch;
+  const databases = new ProjectDatabaseManager();
   const liveness = new LivenessMonitor(registry.projects, {
     ...options.liveness,
     fetch: fetchImpl,
@@ -63,11 +101,20 @@ export function createObservatoryApp(
     registry.projects.map((project) => [project.id, project]),
   );
 
-  const app = new Elysia()
-    .get("/health", () => ({
-      status: "ok",
-      projects: registry.projects.length,
-    }))
+  let app = new Elysia().get("/health", () => ({
+    status: "ok",
+    projects: registry.projects.length,
+  }));
+
+  for (const project of registry.projects) {
+    const traceApi = createKernelTraceReadApi(
+      missingDatabaseService(databases, project),
+      { prefix: `/registry/kernels/${project.id}/kernel` },
+    );
+    app = app.use(traceApi as unknown as Elysia);
+  }
+
+  app
     .get("/api/actions", ({ request, set }) => {
       try {
         return readActions(new URL(request.url).searchParams);
@@ -89,6 +136,7 @@ export function createObservatoryApp(
             live: state.live,
             checkedAt: state.checkedAt,
             writable: project.writable,
+            tracesAvailable: databases.hasDatabase(project),
             readApiBaseUrl: project.readApiBaseUrl,
             viewerBaseUrl: project.viewerBaseUrl,
             extensionPackage: project.extensionPackage,
@@ -167,9 +215,11 @@ export function createObservatoryApp(
     app,
     liveness,
     launcher,
+    databases,
     async close() {
       liveness.stop();
       await launcher.stopAll();
+      databases.close();
     },
   };
 }

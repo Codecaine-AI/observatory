@@ -1,6 +1,6 @@
 # Observatory
 
-Observatory is a local development UI with two data sources:
+Observatory is a local development UI with three data sources:
 
 - **The action log.** Every Codecaine MCP server (canvas-mcp, docs-mcp,
   prompt-kit-mcp) appends one record per tool call to a shared SQLite file,
@@ -9,6 +9,18 @@ Observatory is a local development UI with two data sources:
   appends records. A missing file shows as an empty log and is not created.
 - **Registered projects.** `registry.json` lists the harnesses Observatory
   health-checks, starts, stops, and proxies requests to.
+- **Kernel traces.** Each registered project's kernel trace database
+  (`dbPath`, else the `dbPath` of its kernel manifest). Observatory opens it
+  read-only, so it works while the harness is offline.
+
+Observatory has two pages. Choose one in the header:
+
+- **Action log** (`/`).
+- **Traces** (`/traces/:projectId`). Pick a project with its Traces button in
+  the sidebar. The page lists the project's kernel sessions and opens one in
+  `KernelTraceWorkspace` from the trace-viewer packages
+  (`@codecaine-ai/agent-kernel-viewer-*`). A project with no trace database
+  shows an empty list.
 
 The Action log page lists records newest first (time, thread, agent, tool,
 target, result) and filters by thread id and target. Click a thread or target
@@ -24,14 +36,45 @@ first, so the page says when it hit that cap. Filter to narrow it.
   state.
 - `POST /registry/projects/:id/launch`, `POST /registry/projects/:id/stop`
   and `GET /registry/projects/:id/logs` drive the launcher.
-- `/registry/kernels/:id/kernel/*` proxies to the project's `readApiBaseUrl`.
+- `GET /registry/kernels/:id/kernel/trace-sessions`,
+  `GET /registry/kernels/:id/kernel/trace-sessions/:sessionId`,
+  `GET /registry/kernels/:id/kernel/containers/:containerId/trace`,
+  `GET /registry/kernels/:id/kernel/blobs/:hash` and
+  `GET /registry/kernels/:id/kernel/runs/:runId/turns/:turn/context` read the
+  project's trace database directly. A missing database returns
+  `{ trace_sessions: [] }` for the list and 404 for the others.
+- Every other `/registry/kernels/:id/kernel/*` path proxies to the project's
+  `readApiBaseUrl`.
 
 ## Run
+
+Observatory is not a Core workspace member. Its `@codecaine-ai/*`
+dependencies are `link:` dependencies that resolve through `.bun-links`
+(`bunfig.toml` sets `globalDir = "./.bun-links"`). Before `bun install`,
+`.bun-links/node_modules/@codecaine-ai/` must hold a symlink for each one:
+
+| Link | Target in Core |
+|---|---|
+| `action-log` | `annotations/packages/action-log` |
+| `design-system` | `design-system` |
+| `agent-kernel` | `agent-kernel/packages/kernel` |
+| `agent-kernel-db` | `agent-kernel/packages/db` |
+| `agent-kernel-protocol` | `agent-kernel/packages/protocol` |
+| `agent-kernel-viewer-core` | `trace-viewer/packages/viewer-core` |
+| `agent-kernel-viewer-ui` | `trace-viewer/packages/viewer-ui` |
+| `agent-kernel-viewer-shell` | `trace-viewer/packages/viewer-shell` |
+| `prompt-kit` | `prompt-kit/packages/prompt-kit` |
+
+The viewer packages are TypeScript source. They resolve their own
+dependencies from Core's `node_modules`, so run `bun install` at the Core root
+first.
 
 ```sh
 bun install
 bun run dev
 ```
+
+`bun run build` builds the UI into `src/ui/dist`.
 
 Open <http://127.0.0.1:4891>. The API listens on
 <http://127.0.0.1:4890>.
