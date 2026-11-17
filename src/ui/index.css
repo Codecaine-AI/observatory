@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 @source "./";
+@source "../../node_modules/@codecaine-ai/agent-kernel-viewer-shell/src";
+@source "../../node_modules/@codecaine-ai/agent-kernel-viewer-ui/src";
+@source "../../node_modules/@codecaine-ai/prompt-kit/src";
 
 /*
  * The viewer contract (--background, --trace-*, --status-*, --editor-*, ...) comes from

@@ -4,6 +4,14 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 import { openActionLog } from "@codecaine-ai/action-log";
+import {
+  containers,
+  ensureKernelObservabilitySchema,
+  openKernelDatabase,
+  piAgentSessions,
+  traceBlobs,
+  traceEvents,
+} from "@codecaine-ai/agent-kernel-db";
 
 import { createObservatoryApp, type ObservatoryApp } from "../src/server/app";
 import type { FetchLike } from "../src/server/liveness";
@@ -408,5 +416,137 @@ describe("action log ingest", () => {
         },
       ],
     });
+  });
+});
+
+describe("local read-only trace routes", () => {
+  test("serves session list, detail, container trace, and blobs from SQLite", async () => {
+    const directory = makeTemporaryDirectory();
+    const dbPath = join(directory, "trace.db");
+    const writer = openKernelDatabase({ path: dbPath });
+    await ensureKernelObservabilitySchema(writer.db);
+    const timestamp = "2026-07-30T12:00:00.000Z";
+    const hash = `b1-${"a".repeat(64)}`;
+
+    await writer.db.insert(containers).values({
+      id: "session-1",
+      kernelId: "fixture-kernel",
+      kind: "layout-session",
+      appKey: ["session-1"],
+      label: "Fixture trace",
+      status: "done",
+      metadata: { instruction: "Testing Observatory" },
+      createdAt: timestamp,
+      startedAt: timestamp,
+      endedAt: timestamp,
+    });
+    await writer.db.insert(piAgentSessions).values({
+      id: "pi-1",
+      containerId: "session-1",
+      agentName: "writer",
+      status: "ended",
+      createdAt: timestamp,
+      endedAt: timestamp,
+    });
+    await writer.db.insert(traceEvents).values({
+      eventId: "event-1",
+      containerId: "session-1",
+      piSessionId: "pi-1",
+      type: "app:test",
+      source: "fixture",
+      traceLevel: 0,
+      eventData: { message: "visible" },
+      timestamp,
+    });
+    await writer.db.insert(traceBlobs).values({
+      hash,
+      kind: "text",
+      mimeType: "text/plain",
+      byteLength: 7,
+      data: Buffer.from("fixture"),
+      createdAt: timestamp,
+    });
+    writer.close();
+
+    const entry = project({ kernelRoot: directory, dbPath });
+    const { app } = buildApp(
+      entry,
+      async () => Response.json({ status: "ok" }),
+    );
+    const base =
+      "http://observatory/registry/kernels/fixture/kernel";
+
+    const listResponse = await app.handle(
+      new Request(`${base}/trace-sessions`),
+    );
+    expect(listResponse.status).toBe(200);
+    expect(await listResponse.json()).toMatchObject({
+      trace_sessions: [
+        {
+          id: "session-1",
+          topic: "Testing Observatory",
+          piSessionCount: 1,
+          eventCount: 1,
+          engine: null,
+          runId: null,
+          nodePath: null,
+          invocationId: null,
+          attemptId: null,
+          loopPath: null,
+        },
+      ],
+    });
+
+    for (const path of [
+      "/trace-sessions/session-1",
+      "/containers/session-1/trace",
+    ]) {
+      const detailResponse = await app.handle(new Request(`${base}${path}`));
+      expect(detailResponse.status).toBe(200);
+      expect(await detailResponse.json()).toMatchObject({
+        session: { id: "session-1" },
+        events: [{ eventId: "event-1", eventData: { message: "visible" } }],
+      });
+    }
+
+    const blobResponse = await app.handle(
+      new Request(`${base}/blobs/${hash}`),
+    );
+    expect(blobResponse.status).toBe(200);
+    expect(blobResponse.headers.get("content-type")).toBe("text/plain");
+    expect(await blobResponse.text()).toBe("fixture");
+  });
+
+  test("treats a missing database as no traces yet", async () => {
+    const entry = project();
+    const calls: string[] = [];
+    const { app } = buildApp(
+      entry,
+      async (input) => {
+        calls.push(String(input));
+        return Response.json({ status: "ok" });
+      },
+    );
+
+    const response = await app.handle(
+      new Request(
+        "http://observatory/registry/kernels/fixture/kernel/trace-sessions",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ trace_sessions: [] });
+
+    const base = "http://observatory/registry/kernels/fixture/kernel";
+    for (const path of [
+      "/trace-sessions/session-1",
+      "/containers/session-1/trace",
+      `/blobs/b1-${"a".repeat(64)}`,
+      "/runs/run-1/turns/1/context",
+    ]) {
+      const missing = await app.handle(new Request(`${base}${path}`));
+      expect(missing.status).toBe(404);
+    }
+    expect(calls).toEqual([]);
   });
 });

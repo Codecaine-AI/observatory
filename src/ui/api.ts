@@ -1,4 +1,9 @@
 import type { StoredRecord } from "@codecaine-ai/action-log";
+import {
+  KERNEL_TRACE_READ_PATHS,
+  type KernelTraceSessionDetail,
+  type KernelTraceSessionListResponse,
+} from "@codecaine-ai/agent-kernel-viewer-core";
 
 export type ActionRecord = StoredRecord;
 
@@ -7,6 +12,7 @@ export interface RegistryProject {
   name: string;
   live: boolean;
   writable: boolean;
+  tracesAvailable?: boolean;
   extensionPackage: string | null;
   launchable: boolean;
   managed: ManagedProjectStatus;
@@ -33,6 +39,15 @@ export interface ManagedProjectStatus {
 
 interface RegistryProjectsResponse {
   projects: RegistryProject[];
+}
+
+/**
+ * The shared viewer packages append viewer-core paths such as
+ * `/kernel/blobs/:hash` themselves. This prefix therefore stops before
+ * `/kernel`.
+ */
+export function viewerApiPrefix(projectId: string): string {
+  return `/registry/kernels/${encodeURIComponent(projectId)}`;
 }
 
 export async function fetchRegistryProjects(signal?: AbortSignal): Promise<RegistryProject[]> {
@@ -83,6 +98,27 @@ export async function fetchProjectLogs(
     throw new Error("Project logs returned an invalid response.");
   }
   return body.lines;
+}
+
+export async function fetchTraceSessions(
+  projectId: string,
+  signal?: AbortSignal,
+): Promise<KernelTraceSessionListResponse> {
+  return requestJson<KernelTraceSessionListResponse>(
+    `${viewerApiPrefix(projectId)}${KERNEL_TRACE_READ_PATHS.listTraceSessions}`,
+    signal,
+  );
+}
+
+export async function fetchTraceSessionDetail(
+  projectId: string,
+  sessionId: string,
+  signal?: AbortSignal,
+): Promise<KernelTraceSessionDetail> {
+  return requestJson<KernelTraceSessionDetail>(
+    `${viewerApiPrefix(projectId)}${KERNEL_TRACE_READ_PATHS.traceSessionDetail(sessionId)}`,
+    signal,
+  );
 }
 
 export interface ActionFilter {
@@ -153,6 +189,7 @@ function normalizeProject(value: RegistryProject): RegistryProject {
     ...value,
     live: value.live === true,
     writable: value.writable === true,
+    tracesAvailable: value.tracesAvailable !== false,
     launchable: value.launchable === true,
     managed: normalizeManagedStatus(value.managed),
     extensionPackage:

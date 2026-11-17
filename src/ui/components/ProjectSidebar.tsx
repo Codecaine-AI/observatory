@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { fetchProjectLogs, type RegistryProject } from "../api";
+import { isPlainLeftClick, routePath } from "../router";
 
 export interface ProjectActionState {
   kind: "start" | "stop";
@@ -18,6 +19,9 @@ interface ProjectSidebarProps {
   projects: RegistryProject[];
   /** Why the registry could not be read, when the last refresh failed. */
   error: string | null;
+  /** The project the Traces page shows, or null on the Action log page. */
+  selectedProjectId: string | null;
+  onOpenTraces: (projectId: string) => void;
   onStart: (projectId: string) => void;
   onStop: (projectId: string) => void;
   actions: Record<string, ProjectActionState | undefined>;
@@ -50,6 +54,8 @@ export function projectLifecycle(
 export function ProjectSidebar({
   projects,
   error,
+  selectedProjectId,
+  onOpenTraces,
   onStart,
   onStop,
   actions,
@@ -96,6 +102,7 @@ export function ProjectSidebar({
         ) : (
           <ul className="space-y-2">
             {projects.map((project) => {
+              const selected = project.id === selectedProjectId;
               const action = actions[project.id];
               const lifecycle = projectLifecycle(project, action);
               const supervisorOwned = project.managed.pid !== undefined;
@@ -107,7 +114,11 @@ export function ProjectSidebar({
               return (
                 <li
                   key={project.id}
-                  className="overflow-hidden rounded-[3px] border border-border bg-background/30 [&>*:last-child]:border-b-0"
+                  className={`overflow-hidden rounded-[3px] border [&>*:last-child]:border-b-0 ${
+                    selected
+                      ? "border-status-info-border bg-status-info-fill/20"
+                      : "border-border bg-background/30"
+                  }`}
                 >
                   <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2">
                     <span
@@ -161,6 +172,23 @@ export function ProjectSidebar({
                       exitCode={project.managed.exitCode}
                     />
                   ) : null}
+
+                  <a
+                    href={routePath({ page: "traces", projectId: project.id })}
+                    aria-current={selected ? "page" : undefined}
+                    onClick={(event) => {
+                      if (!isPlainLeftClick(event)) return;
+                      event.preventDefault();
+                      onOpenTraces(project.id);
+                    }}
+                    className={`block w-full bg-card px-3 py-2 text-left font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.1em] transition-colors ${
+                      selected
+                        ? "text-status-info"
+                        : "text-muted-foreground hover:bg-muted/35 hover:text-foreground"
+                    }`}
+                  >
+                    Traces
+                  </a>
                 </li>
               );
             })}
