@@ -5,6 +5,11 @@ import {
   type KernelTraceSessionListResponse,
 } from "@codecaine-ai/agent-kernel-viewer-core";
 
+import type {
+  EngineRunListResponse,
+  EngineRunResponse,
+} from "@codecaine-ai/agent-kernel-viewer-read-service/wire";
+
 export type ActionRecord = StoredRecord;
 
 export interface RegistryProject {
@@ -117,6 +122,29 @@ export async function fetchTraceSessionDetail(
 ): Promise<KernelTraceSessionDetail> {
   return requestJson<KernelTraceSessionDetail>(
     `${viewerApiPrefix(projectId)}${KERNEL_TRACE_READ_PATHS.traceSessionDetail(sessionId)}`,
+    signal,
+  );
+}
+
+/** The prefix the viewer appends `/engine-runs/...` to (gateway call content). */
+export const ENGINE_RUNS_API_PREFIX = "/api";
+
+/** The prefix the viewer appends kernel paths to, for the kernel spans of an engine run. */
+export const ARCHON_HOME_KERNEL_PREFIX = "/api/archon-home";
+
+/** The engine runs of the Archon home, newest first. */
+export async function fetchEngineRuns(signal?: AbortSignal): Promise<EngineRunListResponse> {
+  return requestJson<EngineRunListResponse>(`${ENGINE_RUNS_API_PREFIX}/engine-runs`, signal);
+}
+
+/** One engine run as a span tree (wire form: times are ISO strings). */
+export async function fetchEngineRun(
+  engine: string,
+  runId: string,
+  signal?: AbortSignal,
+): Promise<EngineRunResponse> {
+  return requestJson<EngineRunResponse>(
+    `${ENGINE_RUNS_API_PREFIX}/engine-runs/${encodeURIComponent(engine)}/${encodeURIComponent(runId)}`,
     signal,
   );
 }

@@ -71,6 +71,12 @@ export class ProjectDatabaseManager {
               eventCount,
               latestEventAt,
               metadata,
+              engine: container.engine ?? null,
+              runId: container.run_id ?? null,
+              nodePath: container.node_path ?? null,
+              invocationId: container.invocation_id ?? null,
+              attemptId: container.attempt_id ?? null,
+              loopPath: container.loop_path ?? null,
             };
           },
         );

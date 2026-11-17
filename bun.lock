@@ -10,6 +10,7 @@
         "@codecaine-ai/agent-kernel-db": "link:@codecaine-ai/agent-kernel-db",
         "@codecaine-ai/agent-kernel-protocol": "link:@codecaine-ai/agent-kernel-protocol",
         "@codecaine-ai/agent-kernel-viewer-core": "link:@codecaine-ai/agent-kernel-viewer-core",
+        "@codecaine-ai/agent-kernel-viewer-read-service": "link:@codecaine-ai/agent-kernel-viewer-read-service",
         "@codecaine-ai/agent-kernel-viewer-shell": "link:@codecaine-ai/agent-kernel-viewer-shell",
         "@codecaine-ai/agent-kernel-viewer-ui": "link:@codecaine-ai/agent-kernel-viewer-ui",
         "@codecaine-ai/design-system": "link:@codecaine-ai/design-system",
@@ -82,6 +83,8 @@
     "@codecaine-ai/agent-kernel-protocol": ["@codecaine-ai/agent-kernel-protocol@link:@codecaine-ai/agent-kernel-protocol", {}],
 
     "@codecaine-ai/agent-kernel-viewer-core": ["@codecaine-ai/agent-kernel-viewer-core@link:@codecaine-ai/agent-kernel-viewer-core", {}],
+
+    "@codecaine-ai/agent-kernel-viewer-read-service": ["@codecaine-ai/agent-kernel-viewer-read-service@link:@codecaine-ai/agent-kernel-viewer-read-service", {}],
 
     "@codecaine-ai/agent-kernel-viewer-shell": ["@codecaine-ai/agent-kernel-viewer-shell@link:@codecaine-ai/agent-kernel-viewer-shell", {}],
 

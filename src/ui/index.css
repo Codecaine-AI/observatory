@@ -67,6 +67,24 @@
   --color-agentprism-badge-llm-foreground: rgb(var(--agentprism-badge-llm-foreground));
   --color-agentprism-badge-tool-foreground: rgb(var(--agentprism-badge-tool-foreground));
 
+  /* Categorical hues (design-system hue tokens): the viewer's kind badges and model-node bands. */
+  --color-blue: var(--ds-color-blue-text);
+  --color-blue-soft: var(--ds-color-blue-soft);
+  --color-gray: var(--ds-color-gray-text);
+  --color-gray-soft: var(--ds-color-gray-soft);
+  --color-green: var(--ds-color-green-text);
+  --color-green-soft: var(--ds-color-green-soft);
+  --color-orange: var(--ds-color-orange-text);
+  --color-orange-soft: var(--ds-color-orange-soft);
+  --color-pink: var(--ds-color-pink-text);
+  --color-pink-soft: var(--ds-color-pink-soft);
+  --color-teal: var(--ds-color-teal-text);
+  --color-teal-soft: var(--ds-color-teal-soft);
+  --color-violet: var(--ds-color-violet-text);
+  --color-violet-soft: var(--ds-color-violet-soft);
+  --color-yellow: var(--ds-color-yellow-text);
+  --color-yellow-soft: var(--ds-color-yellow-soft);
+
   --radius-sm: var(--radius);
   --radius-md: var(--radius);
   --radius-lg: var(--radius);

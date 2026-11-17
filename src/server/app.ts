@@ -8,6 +8,11 @@ import {
 import { readActions } from "./actions";
 import { ProjectDatabaseManager } from "./database";
 import {
+  ArchonKernelDatabase,
+  createEngineRunPlugins,
+  type EngineRunSettings,
+} from "./engine-runs";
+import {
   LivenessMonitor,
   type FetchLike,
   type LivenessMonitorOptions,
@@ -29,6 +34,8 @@ export interface CreateObservatoryAppOptions {
   launcher?: ProjectLauncherOptions;
   startLiveness?: boolean;
   autoLaunch?: boolean;
+  /** Serve the engine runs of an Archon home. Omit to serve none. */
+  engineRuns?: EngineRunSettings;
 }
 
 export interface ObservatoryApp {
@@ -105,6 +112,19 @@ export function createObservatoryApp(
     status: "ok",
     projects: registry.projects.length,
   }));
+
+  const archonKernel = options.engineRuns
+    ? new ArchonKernelDatabase(options.engineRuns.archonHome)
+    : null;
+  if (options.engineRuns && archonKernel) {
+    const { engineRuns, kernelApi } = createEngineRunPlugins(
+      options.engineRuns,
+      archonKernel,
+    );
+    app = app
+      .use(engineRuns as unknown as Elysia)
+      .use(kernelApi as unknown as Elysia);
+  }
 
   for (const project of registry.projects) {
     const traceApi = createKernelTraceReadApi(
@@ -220,6 +240,7 @@ export function createObservatoryApp(
       liveness.stop();
       await launcher.stopAll();
       databases.close();
+      archonKernel?.close();
     },
   };
 }

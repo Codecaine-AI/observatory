@@ -1,6 +1,6 @@
 # Observatory
 
-Observatory is a local development UI with three data sources:
+Observatory is a local development UI with four data sources:
 
 - **The action log.** Every Codecaine MCP server (canvas-mcp, docs-mcp,
   prompt-kit-mcp) appends one record per tool call to a shared SQLite file,
@@ -12,8 +12,13 @@ Observatory is a local development UI with three data sources:
 - **Kernel traces.** Each registered project's kernel trace database
   (`dbPath`, else the `dbPath` of its kernel manifest). Observatory opens it
   read-only, so it works while the harness is offline.
+- **Engine runs.** The workflow engine runs of one Archon home
+  (`OBSERVATORY_ARCHON_HOME`, default `~/.archon`), read through the
+  trace-viewer read service: `archon.db`, the home's kernel
+  `.agent-kernel/trace.db`, and the model calls in the trace ClickHouse.
+  Each file opens read-only.
 
-Observatory has two pages. Choose one in the header:
+Observatory has three pages. Choose one in the header:
 
 - **Action log** (`/`).
 - **Traces** (`/traces/:projectId`). Pick a project with its Traces button in
@@ -21,6 +26,11 @@ Observatory has two pages. Choose one in the header:
   `KernelTraceWorkspace` from the trace-viewer packages
   (`@codecaine-ai/agent-kernel-viewer-*`). A project with no trace database
   shows an empty list.
+- **Runs** (`/runs/:engine/:runId`). The engine runs of the Archon home,
+  newest first: engine, workflow name, status, run id and start time. A run
+  opens as a tree in the same workspace: run, loop round, node attempt, and
+  the gateway calls or kernel spans of each node attempt. A call loads its
+  prompt, answer and usage when it opens.
 
 The Action log page lists records newest first (time, thread, agent, tool,
 target, result) and filters by thread id and target. Click a thread or target
@@ -45,6 +55,26 @@ first, so the page says when it hit that cap. Filter to narrow it.
   `{ trace_sessions: [] }` for the list and 404 for the others.
 - Every other `/registry/kernels/:id/kernel/*` path proxies to the project's
   `readApiBaseUrl`.
+- `GET /api/engine-runs` returns `{ engine_runs }`, newest first.
+- `GET /api/engine-runs/:engine/:runId` returns `{ run, spans }`, the run as a
+  span tree.
+- `GET /api/engine-runs/:engine/:runId/calls/:callId` returns the prompt, the
+  answer and the usage of one gateway call. It answers 501 when no gateway is
+  configured.
+- `GET /api/archon-home/kernel/...` serves the kernel trace routes (blobs, turn
+  contexts) on the Archon home's kernel trace.db, for the kernel spans of a
+  run's kernel nodes.
+
+## Engine run settings
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `OBSERVATORY_ARCHON_HOME` | `~/.archon` | The Archon home to read |
+| `TRACES_SQL_PASSWORD` | unset | Read-only ClickHouse password. Unset: the tree shows no calls and no counts |
+| `TRACES_SQL_URL` | `https://traces-sql.lascari.dev/` | The ClickHouse HTTP endpoint |
+| `TRACES_SQL_USER` | `traces_ro` | The read-only user |
+
+The password stays in the API process. No response and no client file holds it.
 
 ## Run
 
@@ -63,6 +93,7 @@ dependencies are `link:` dependencies that resolve through `.bun-links`
 | `agent-kernel-viewer-core` | `trace-viewer/packages/viewer-core` |
 | `agent-kernel-viewer-ui` | `trace-viewer/packages/viewer-ui` |
 | `agent-kernel-viewer-shell` | `trace-viewer/packages/viewer-shell` |
+| `agent-kernel-viewer-read-service` | `trace-viewer/packages/read-service` |
 | `prompt-kit` | `prompt-kit/packages/prompt-kit` |
 
 The viewer packages are TypeScript source. They resolve their own

@@ -12,6 +12,7 @@ import {
   type ProjectActionState,
 } from "./components/ProjectSidebar";
 import { ActionsPage } from "./pages/ActionsPage";
+import { RunsPage } from "./pages/RunsPage";
 import { TracesPage } from "./pages/TracesPage";
 import { useRoute } from "./router";
 
@@ -159,12 +160,16 @@ export function App() {
             <p className="font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.18em] text-muted-foreground">
               {route.page === "traces"
                 ? "Kernel traces"
-                : "Every MCP tool call on this machine"}
+                : route.page === "runs"
+                  ? "Workflow engine runs"
+                  : "Every MCP tool call on this machine"}
             </p>
             <h2 className="truncate font-display text-[16px] font-bold">
               {route.page === "traces"
                 ? activeProject?.name ?? "No project selected"
-                : "Action log"}
+                : route.page === "runs"
+                  ? "Engine runs"
+                  : "Action log"}
             </h2>
           </div>
           {activeProject ? (
@@ -194,12 +199,23 @@ export function App() {
             >
               Traces
             </PageLink>
+            <PageLink
+              active={route.page === "runs"}
+              onClick={() => navigate({ page: "runs", run: null })}
+            >
+              Runs
+            </PageLink>
           </nav>
         </header>
 
         <div className="min-h-0 flex-1 overflow-hidden p-4">
           {route.page === "actions" ? (
             <ActionsPage />
+          ) : route.page === "runs" ? (
+            <RunsPage
+              run={route.run}
+              onOpen={(run) => navigate({ page: "runs", run })}
+            />
           ) : projectState.status === "error" && projectState.projects.length === 0 ? (
             <CenteredMessage tone="error">{projectState.message}</CenteredMessage>
           ) : !activeProject ? (
