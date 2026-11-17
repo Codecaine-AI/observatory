@@ -1,0 +1,1486 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-aad82d7fc9bec34c011036f3790b5ed3",
+  "title": "Engine Run View",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "erv-intro",
+        "erv-h-screen",
+        "erv-screen-lead",
+        "erv-img-tree",
+        "erv-img-call",
+        "erv-img-decide",
+        "erv-h-levels",
+        "erv-levels-lead",
+        "erv-levels",
+        "erv-levels-open",
+        "erv-h-join",
+        "erv-join-lead",
+        "erv-join",
+        "erv-mode-lead",
+        "erv-modes",
+        "erv-h-pending",
+        "erv-pending-lead",
+        "erv-pending-1",
+        "erv-pending-2",
+        "erv-pending-3",
+        "erv-pending-4",
+        "erv-pending-after",
+        "erv-h-panels",
+        "erv-panels-lead",
+        "erv-panels",
+        "erv-panels-1",
+        "erv-panels-2",
+        "erv-panels-3",
+        "erv-h-display",
+        "erv-display-lead",
+        "erv-display",
+        "erv-h-routes",
+        "erv-routes-lead",
+        "erv-routes",
+        "erv-routes-ids",
+        "erv-summary",
+        "erv-kernel-routes",
+        "erv-h-settings",
+        "erv-settings-lead",
+        "erv-settings",
+        "erv-h-limits",
+        "erv-limits-lead",
+        "erv-limits"
+      ]
+    },
+    "erv-intro": {
+      "id": "erv-intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The Runs page of Observatory shows one run of a workflow engine as a tree, from the run down to each model call. It draws the tree in "
+        },
+        {
+          "insert": "KernelTraceWorkspace",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the same workspace as the Traces page. The read service of the trace-viewer repo builds the tree from 3 stores, joined on the 6 trace tags. This page gives the screen, the tree rules, the detail panels, the routes, the settings and the known limits."
+        }
+      ],
+      "children": []
+    },
+    "erv-h-screen": {
+      "id": "erv-h-screen",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "The Screen"
+        }
+      ],
+      "children": []
+    },
+    "erv-screen-lead": {
+      "id": "erv-screen-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The list at "
+        },
+        {
+          "insert": "/runs",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " shows the runs of the Archon home, newest first, with the workflow name, the engine, the short run id, the local start time and the status. A click opens the run at "
+        },
+        {
+          "insert": "/runs/:engine/:runId",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", with the tree on the left and the detail panel of the selected row on the right. The 3 screenshots show run c5993f42 of the pre-pr-review workflow."
+        }
+      ],
+      "children": []
+    },
+    "erv-img-tree": {
+      "id": "erv-img-tree",
+      "type": "image",
+      "props": {
+        "alt": "Observatory Runs page in the light theme with run pre-pr-review open. The tree shows the run with 19 node attempts: the rounds loop and the script tag-outside-reviewers under the run, and 17 attempts under round 1. Each node attempt has a badge such as bash, script, claude, kernel or codex, and a count such as no model, 7 calls, 0 calls or 51 calls. The kernel node route shows decide → review. The Run block of the detail panel lists the workflow, engine archon, the run id, status completed, the start, the end and duration 9.9 min. It ends with 19 node attempts and the trace tags engine and run_id.",
+        "caption": "The tree of run c5993f42: 19 node attempts, and call counts that sum to 131.",
+        "src": "./assets/images/check2-tree-19-node-attempts-light.png"
+      },
+      "children": []
+    },
+    "erv-img-call": {
+      "id": "erv-img-call",
+      "type": "image",
+      "props": {
+        "alt": "Call 3 of the review-codex node open in the light theme. The tree lists the calls of review-codex as call 1, call 2 and onward, each with a local start time such as 05:55:33 and the outcome completed. The detail panel shows collapsed System Prompt, Prompt Messages (2) and Answer blocks. The Usage block shows model cx3/gpt-6.1-sol, response model gpt-6.1-sol and effort high. It gives 18,996 input tokens, 257 output tokens, and 0 cached input, cache write and reasoning tokens. The Call block shows outcome completed, the start time, the call id, the response id, call attempt 1, api openai_responses and stop reason completed. The Trace tags block shows all 6 tags.",
+        "caption": "One gateway call of a native node. The capture is from trace-viewer 210cc4a, so the detail times show in UTC. The merged code shows them in local time.",
+        "src": "./assets/images/check4-codex-call-usage-tags-light.png"
+      },
+      "children": []
+    },
+    "erv-img-decide": {
+      "id": "erv-img-decide",
+      "type": "image",
+      "props": {
+        "alt": "The kernel node route open in the light theme. The tree row reads kernel route decide → review, 0 calls, and its kernel span DECIDE rounds.route shows review p=1.00 in 168 ms. The Decision block of the detail panel reads review · p=1.00, with the tags native and jev-1.13.0. The Probabilities block gives review 1.00, trivial 0.00 and other 0.00, with a floor of 0.60. The Input State block below holds the questions and the PR text.",
+        "caption": "The decision card of a decide node, from its kernel spans. The node shows 0 calls.",
+        "src": "./assets/images/check5-decision-card-light.png"
+      },
+      "children": []
+    },
+    "erv-h-levels": {
+      "id": "erv-h-levels",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Tree Levels"
+        }
+      ],
+      "children": []
+    },
+    "erv-levels-lead": {
+      "id": "erv-levels-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The tree has 4 levels, and "
+        },
+        {
+          "insert": "buildRunSpan",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "read-service/src/reader.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " builds each level from the tags. The "
+        },
+        {
+          "insert": "event_type",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " attribute names the level, and viewer-ui picks the span card and the detail panel by it."
+        }
+      ],
+      "children": []
+    },
+    "erv-levels": {
+      "id": "erv-levels",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Level",
+          "event_type",
+          "Title",
+          "Parent"
+        ],
+        "rows": [
+          [
+            "Run",
+            [
+              {
+                "insert": "engine_run",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The workflow name, else the run id",
+            "None. The run is the root."
+          ],
+          [
+            "Loop round",
+            [
+              {
+                "insert": "engine_loop_round",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "round N",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", or "
+              },
+              {
+                "insert": "<group> · round N",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " when no loop group attempt holds it"
+              }
+            ],
+            [
+              {
+                "insert": "The attempt of its loop group, else the run or the outer round. Each "
+              },
+              {
+                "insert": "loop_path",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " segment "
+              },
+              {
+                "insert": "<group>:<round>",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " is one level."
+              }
+            ]
+          ],
+          [
+            "Node attempt",
+            [
+              {
+                "insert": "engine_node_attempt",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The node name from "
+              },
+              {
+                "insert": "archon.db",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", else "
+              },
+              {
+                "insert": "node_path",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", else "
+              },
+              {
+                "insert": "attempt_id",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The round of its "
+              },
+              {
+                "insert": "loop_path",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". An attempt with no loop path sits under the run."
+              }
+            ]
+          ],
+          [
+            "Row of a node attempt",
+            [
+              {
+                "insert": "gateway_call",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", or the kernel span types"
+              }
+            ],
+            [
+              {
+                "insert": "call N",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " for a call, in start order"
+              }
+            ],
+            "The node attempt. Kernel spans replace the call list when a kernel container holds the attempt."
+          ]
+        ],
+        "title": "Levels of the run tree"
+      },
+      "children": []
+    },
+    "erv-levels-open": {
+      "id": "erv-levels-open",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The tree opens with each node attempt closed, except a node attempt that holds loop rounds. "
+        },
+        {
+          "insert": "collectInitiallyExpandedIds",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in viewer-ui sets this, so a run opens on its node attempts."
+        }
+      ],
+      "children": []
+    },
+    "erv-h-join": {
+      "id": "erv-h-join",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Join and Count Rules"
+        }
+      ],
+      "children": []
+    },
+    "erv-join-lead": {
+      "id": "erv-join-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The reader joins what each adapter returns on all 6 tags: engine, run_id, node_path, invocation_id, attempt_id and loop_path. A row with no Archon facts still gets a place, so a run that only the tags show still gives a tree."
+        }
+      ],
+      "children": []
+    },
+    "erv-join": {
+      "id": "erv-join",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "As the code applies it"
+        ],
+        "rows": [
+          [
+            "A row belongs to a node attempt",
+            [
+              {
+                "insert": "All 6 tags are equal. "
+              },
+              {
+                "insert": "normalizeTags",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " first maps an empty tag to null, and null equals only null."
+              }
+            ]
+          ],
+          [
+            "A kernel container belongs to a node attempt",
+            "The kernel adapter lists the containers with the run's engine and run_id tags and keeps each one with an attempt_id. A container inside the container of another attempt stays part of that attempt's trace."
+          ],
+          [
+            "A call counts as a gateway call",
+            [
+              {
+                "insert": "isServedCall",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ": the outcome is not "
+              },
+              {
+                "insert": "relayed",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", and the response id does not start with "
+              },
+              {
+                "insert": "resp_prewarm_",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". An empty outcome counts."
+              }
+            ]
+          ],
+          [
+            "The call count of a node attempt",
+            "The served calls with the attempt's 6 tags that have reached ClickHouse. A kernel node counts its calls and lists its kernel spans in their place."
+          ],
+          [
+            "A skipped node",
+            [
+              {
+                "insert": "A "
+              },
+              {
+                "insert": "node_skipped",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " row of "
+              },
+              {
+                "insert": "archon.db",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " gives an attempt with status skipped. A "
+              },
+              {
+                "insert": "node_skipped_prior_success",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " row of a resumed run gives one with no attempt id."
+              }
+            ]
+          ],
+          [
+            "An unfinished node",
+            [
+              {
+                "insert": "A "
+              },
+              {
+                "insert": "node_started",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " row with no end row, in a run that has ended"
+              }
+            ]
+          ]
+        ],
+        "title": "Join and count rules"
+      },
+      "children": []
+    },
+    "erv-mode-lead": {
+      "id": "erv-mode-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The Archon adapter sets the node mode from the workflow YAML that the run record names. The mode decides the badge, the count label and the pending rule."
+        }
+      ],
+      "children": []
+    },
+    "erv-modes": {
+      "id": "erv-modes",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Mode",
+          "The node",
+          "Badge"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "native",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "A harness node, such as Claude or Codex, that makes gateway calls",
+            "The provider name"
+          ],
+          [
+            [
+              {
+                "insert": "bundle",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "A kernel agent on the agent-kernel provider",
+            "kernel"
+          ],
+          [
+            [
+              {
+                "insert": "extract",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "A node whose definition has "
+              },
+              {
+                "insert": "extract",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "kernel"
+          ],
+          [
+            [
+              {
+                "insert": "decide",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "A node whose definition has "
+              },
+              {
+                "insert": "decide",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". The kernel decides with no gateway call."
+              }
+            ],
+            "kernel"
+          ],
+          [
+            [
+              {
+                "insert": "code",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "A bash, script or exec node, or a loop group",
+            "The node kind, or loop for a loop group"
+          ]
+        ],
+        "title": "Node modes"
+      },
+      "children": []
+    },
+    "erv-h-pending": {
+      "id": "erv-h-pending",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "The Pending Rule"
+        }
+      ],
+      "children": []
+    },
+    "erv-pending-lead": {
+      "id": "erv-pending-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A node attempt shows "
+        },
+        {
+          "insert": "calls pending",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " when 4 facts hold. "
+        },
+        {
+          "insert": "toAttemptSpan",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " sets the "
+        },
+        {
+          "insert": "calls_pending",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " attribute from them."
+        }
+      ],
+      "children": []
+    },
+    "erv-pending-1": {
+      "id": "erv-pending-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The gateway adapter answered for the run. A failed gateway read gives no counts and no pending mark."
+        }
+      ],
+      "children": []
+    },
+    "erv-pending-2": {
+      "id": "erv-pending-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The node mode is native, bundle or extract. A decide node and a code node are never pending."
+        }
+      ],
+      "children": []
+    },
+    "erv-pending-3": {
+      "id": "erv-pending-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The status is not skipped."
+        }
+      ],
+      "children": []
+    },
+    "erv-pending-4": {
+      "id": "erv-pending-4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "No served call of the attempt has reached ClickHouse."
+        }
+      ],
+      "children": []
+    },
+    "erv-pending-after": {
+      "id": "erv-pending-after",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The count on a node attempt is the count of the calls that have arrived, so it can grow after the run ends. The Runs page reads the list and the open run again every 30 s, and a re-read keeps the selection."
+        }
+      ],
+      "children": []
+    },
+    "erv-h-panels": {
+      "id": "erv-h-panels",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Detail Panels"
+        }
+      ],
+      "children": []
+    },
+    "erv-panels-lead": {
+      "id": "erv-panels-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each level has one detail panel in viewer-ui "
+        },
+        {
+          "insert": "EngineBodies",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The table lists the blocks of each panel in their order."
+        }
+      ],
+      "children": []
+    },
+    "erv-panels": {
+      "id": "erv-panels",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Row",
+          "Blocks"
+        ],
+        "rows": [
+          [
+            "Run",
+            "Run: workflow, engine, run id, status, start, end, duration, node attempts. Trace tags: only the tags the run holds."
+          ],
+          [
+            "Loop round",
+            "Loop round: loop group, round, loop path, node attempts, start, end, duration"
+          ],
+          [
+            "Node attempt",
+            "Node attempt: status, kind, mode, provider, model, start, end, duration, gateway calls, skip reason. Then the decision card of a decide node, the node output, the error, and all 6 trace tags."
+          ],
+          [
+            "Gateway call",
+            "System prompt, Prompt messages, Answer, Answer error, Usage, then Call: outcome, start, call id, response id, call attempt, api, stop reason, continues response, tools offered. Then all 6 trace tags."
+          ]
+        ],
+        "title": "Blocks of each detail panel"
+      },
+      "children": []
+    },
+    "erv-panels-1": {
+      "id": "erv-panels-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "A row shows only the facts that a store holds. A trace tag that a node attempt or a call does not hold reads NULL."
+        }
+      ],
+      "children": []
+    },
+    "erv-panels-2": {
+      "id": "erv-panels-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "A call loads its prompt, answer and usage from the call route when the call opens, through "
+        },
+        {
+          "insert": "useEngineCall",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Until then, a note says that the content loads."
+        }
+      ],
+      "children": []
+    },
+    "erv-panels-3": {
+      "id": "erv-panels-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "A call with a missing block shows a Partial content note with the count of missing blocks. A call with no call attempt row says that the prompt and the answer are not available."
+        }
+      ],
+      "children": []
+    },
+    "erv-h-display": {
+      "id": "erv-h-display",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Display Rules"
+        }
+      ],
+      "children": []
+    },
+    "erv-display-lead": {
+      "id": "erv-display-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The view shows what each store holds and repairs no store. These rules come from "
+        },
+        {
+          "insert": "engine-display.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "EngineBodies/utils.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in viewer-ui."
+        }
+      ],
+      "children": []
+    },
+    "erv-display": {
+      "id": "erv-display",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Fact",
+          "How the view shows it"
+        ],
+        "rows": [
+          [
+            "Cost",
+            "No row and no panel shows a cost, because no store gives a cost for every node or a run total."
+          ],
+          [
+            "Times",
+            [
+              {
+                "insert": "A call row shows its local start time as "
+              },
+              {
+                "insert": "HH:MM:SS",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". A detail panel shows a local date and time with the zone name. Both show the UTC value in a tooltip."
+              }
+            ]
+          ],
+          [
+            "Call duration",
+            "A call shows a start time and no duration, because a gateway row has no end time."
+          ],
+          [
+            "Token counts",
+            "Cached input tokens and cache write tokens each have their own line. Each count keeps the provider's meaning, so an Anthropic input count leaves out cached tokens and an OpenAI input count holds them."
+          ],
+          [
+            "Model names",
+            "The Usage block shows the model of the request, and the response model only when it differs. A tree row shows no model."
+          ],
+          [
+            "Helper calls",
+            "A native node lists each served call in time order, such as a session-title call or a summary call. The served-call rule filters only on the outcome and the response id."
+          ],
+          [
+            "Decide node",
+            [
+              {
+                "insert": "When the gateway adapter answered, the node shows "
+              },
+              {
+                "insert": "0 calls",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". It also shows its kernel spans, its decision card, and "
+              },
+              {
+                "insert": "decide → <choice>",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " beside its name when the node output names the choice."
+              }
+            ]
+          ],
+          [
+            "Outcome",
+            [
+              {
+                "insert": "A call shows its outcome as the store holds it. An empty outcome reads "
+              },
+              {
+                "insert": "(empty)",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            "Skipped node",
+            [
+              {
+                "insert": "The row shows a skipped chip with the skip reason as its tooltip. A skipped node that makes model calls shows no call count, and a skipped code node shows "
+              },
+              {
+                "insert": "no model",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ]
+        ],
+        "title": "Display rules"
+      },
+      "children": []
+    },
+    "erv-h-routes": {
+      "id": "erv-h-routes",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Routes"
+        }
+      ],
+      "children": []
+    },
+    "erv-routes-lead": {
+      "id": "erv-routes-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Observatory mounts the 3 routes of "
+        },
+        {
+          "insert": "createEngineRunRoutes",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " under "
+        },
+        {
+          "insert": "/api",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Every answer that is not 200 has the body "
+        },
+        {
+          "insert": "{ error: string }",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "erv-routes": {
+      "id": "erv-routes",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Route",
+          "200 body",
+          "Other answers"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "GET /api/engine-runs",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "{ engine_runs: EngineRunSummary[] }",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", newest first. A run with no start time is last."
+              }
+            ],
+            "500 on a failed read, 503 on a WAL database with no -wal file"
+          ],
+          [
+            [
+              {
+                "insert": "GET /api/engine-runs/:engine/:runId",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "{ run: EngineRunSummary, spans: WireTraceSpan[] }",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". "
+              },
+              {
+                "insert": "spans",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " holds the run span, and the tree is under it. Each time is an ISO 8601 string."
+              }
+            ],
+            "400 on a bad engine or run id, 404 when no store holds the run, 500 on a failed read, 503 on a WAL database with no -wal file"
+          ],
+          [
+            [
+              {
+                "insert": "GET /api/engine-runs/:engine/:runId/calls/:callId",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "GatewayCallContent",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ": the tags, outcome, start, model, effort, prompt, answer, usage and the partial flag of one call"
+              }
+            ],
+            "400 on a bad id or a call id that is not a UUID, 404 when the run holds no such call, 501 when no gateway is set, 500 on a failed ClickHouse read"
+          ]
+        ],
+        "title": "Engine run routes"
+      },
+      "children": []
+    },
+    "erv-routes-ids": {
+      "id": "erv-routes-ids",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "An engine name and a run id must be 1 to 128 characters of "
+        },
+        {
+          "insert": "A-Z a-z 0-9 _ -",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The trace-viewer docs give the full "
+        },
+        {
+          "insert": "GatewayCallContent",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " shape. One run list row has this shape:"
+        }
+      ],
+      "children": []
+    },
+    "erv-summary": {
+      "id": "erv-summary",
+      "type": "state-shape",
+      "props": {
+        "example": "{\"engine\":\"archon\",\"runId\":\"c5993f42-7c8b-40c0-89b7-3d7679687f9b\",\"workflowName\":\"pre-pr-review\",\"status\":\"completed\",\"startedAt\":\"2026-11-17T11:53:37Z\",\"endedAt\":\"2026-11-17T12:03:34Z\"}",
+        "fields": [
+          {
+            "name": "engine",
+            "type": "string",
+            "description": "The engine name, such as `archon`. With `runId`, the key of the run."
+          },
+          {
+            "name": "runId",
+            "type": "string",
+            "description": "The run id. It is unique only together with `engine`."
+          },
+          {
+            "name": "workflowName",
+            "type": "string | null",
+            "description": "Only an engine adapter gives it. The list shows the run id when it is null."
+          },
+          {
+            "name": "status",
+            "type": "string | null",
+            "description": "The engine's own word, such as `completed` or `failed`."
+          },
+          {
+            "name": "startedAt",
+            "type": "string | null",
+            "description": "ISO 8601 in UTC, or null when no source holds a start."
+          },
+          {
+            "name": "endedAt",
+            "type": "string | null",
+            "description": "ISO 8601 in UTC. Null while the run has not ended."
+          }
+        ],
+        "name": "EngineRunSummary",
+        "source": {
+          "path": "trace-viewer/packages/read-service/src/types.ts",
+          "symbol": "EngineRunSummary"
+        }
+      },
+      "children": []
+    },
+    "erv-kernel-routes": {
+      "id": "erv-kernel-routes",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Observatory also serves the kernel trace routes of the Archon home under "
+        },
+        {
+          "insert": "/api/archon-home/kernel",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The kernel detail panels of a kernel node read their blobs and turn contexts there."
+        }
+      ],
+      "children": []
+    },
+    "erv-h-settings": {
+      "id": "erv-h-settings",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Settings"
+        }
+      ],
+      "children": []
+    },
+    "erv-settings-lead": {
+      "id": "erv-settings-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "engineRunSettingsFromEnv",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "src/server/engine-runs.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " reads 4 environment variables when the API starts. The API logs the Archon home and whether gateway calls are on."
+        }
+      ],
+      "children": []
+    },
+    "erv-settings": {
+      "id": "erv-settings",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Variable",
+          "What it sets",
+          "When unset"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "OBSERVATORY_ARCHON_HOME",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The Archon home that holds "
+              },
+              {
+                "insert": "archon.db",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": ".agent-kernel/trace.db",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The default home in engine-runs.ts"
+          ],
+          [
+            [
+              {
+                "insert": "TRACES_SQL_PASSWORD",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The read-only ClickHouse password. It stays in the API process, in the Authorization header only.",
+            "No gateway adapter: no call rows, no counts, and 501 on the call route"
+          ],
+          [
+            [
+              {
+                "insert": "TRACES_SQL_URL",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The ClickHouse HTTP endpoint",
+            "The default endpoint in engine-runs.ts"
+          ],
+          [
+            [
+              {
+                "insert": "TRACES_SQL_USER",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The read-only ClickHouse user",
+            "The default user in engine-runs.ts"
+          ]
+        ],
+        "title": "Engine run settings"
+      },
+      "children": []
+    },
+    "erv-h-limits": {
+      "id": "erv-h-limits",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known Limits"
+        }
+      ],
+      "children": []
+    },
+    "erv-limits-lead": {
+      "id": "erv-limits-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The view has 4 known limits. Each one comes from a store or from a read cap, not from the view."
+        }
+      ],
+      "children": []
+    },
+    "erv-limits": {
+      "id": "erv-limits",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Limit",
+          "What the reader sees"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "A WAL database with no "
+              },
+              {
+                "insert": "-wal",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " file"
+              }
+            ],
+            [
+              {
+                "insert": "A read-only connection cannot open it, so the read throws "
+              },
+              {
+                "insert": "WalReadOnlyError",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and the route answers 503. Open the database once with a writer, such as "
+              },
+              {
+                "insert": "archon serve",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            "Late gateway rows",
+            [
+              {
+                "insert": "A row reaches ClickHouse 1 to 18 minutes after its call, as measured on 2026-11-17. Until it arrives, the node attempt shows "
+              },
+              {
+                "insert": "calls pending",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or a lower count."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "No "
+              },
+              {
+                "insert": "TRACES_SQL_PASSWORD",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The tree shows no call rows and no counts, and the call route answers 501."
+          ],
+          [
+            "Large runs",
+            "The kernel adapter reads at most 500 kernel containers of a run and 10,000 events of one container."
+          ]
+        ],
+        "title": "Known limits"
+      },
+      "children": []
+    }
+  }
+}
