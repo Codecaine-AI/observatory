@@ -13,6 +13,7 @@ import {
 import { createKernelTraceReadApi } from "@codecaine-ai/agent-kernel/read-api";
 import {
   createArchonHomeReader,
+  createClickHouseReader,
   createEngineRunRoutes,
   type GatewayAdapterOptions,
 } from "@codecaine-ai/agent-kernel-viewer-read-service";
@@ -29,6 +30,9 @@ import {
  *
  * The kernel routes serve the blobs and turn contexts that the kernel detail
  * renderers fetch for the kernel spans of a run's kernel nodes.
+ *
+ * In local mode the runs come from the home's archon.db. In server mode they
+ * come from the trace ClickHouse, and the home gives only the kernel spans.
  */
 
 /** The prefix the viewer appends `/engine-runs/...` to. */
@@ -48,6 +52,21 @@ export interface EngineRunSettings {
 }
 
 type Env = Record<string, string | undefined>;
+
+/**
+ * local   the Observatory of one machine: the registry, the launcher, and the
+ *         runs of the local Archon home
+ * server  a shared host: read-only routes, and the runs from ClickHouse
+ */
+export type ObservatoryMode = "local" | "server";
+
+/** OBSERVATORY_MODE: `server`, or `local` when unset. Any other value throws. */
+export function observatoryModeFromEnv(env: Env = Bun.env): ObservatoryMode {
+  const value = env.OBSERVATORY_MODE?.trim() ?? "";
+  if (value === "" || value === "local") return "local";
+  if (value === "server") return "server";
+  throw new Error(`OBSERVATORY_MODE must be local or server, not ${JSON.stringify(value)}`);
+}
 
 /**
  * Reads the settings from the environment:
@@ -97,15 +116,25 @@ export class ArchonKernelDatabase {
   }
 }
 
-/** The engine run routes and the home's kernel trace routes, as Elysia plugins. */
+/**
+ * The engine run routes and the home's kernel trace routes, as Elysia plugins.
+ * Server mode throws without a gateway, because its runs come from ClickHouse.
+ */
 export function createEngineRunPlugins(
   settings: EngineRunSettings,
   kernelDatabase: ArchonKernelDatabase,
+  mode: ObservatoryMode = "local",
 ) {
-  const reader = createArchonHomeReader(
-    settings.archonHome,
-    settings.gateway ? { gateway: settings.gateway } : {},
-  );
+  let reader;
+  if (mode === "server") {
+    if (!settings.gateway) throw new Error("Server mode needs TRACES_SQL_PASSWORD: its runs come from ClickHouse");
+    reader = createClickHouseReader(settings.gateway, { kernelDbPath: kernelDatabase.dbPath });
+  } else {
+    reader = createArchonHomeReader(
+      settings.archonHome,
+      settings.gateway ? { gateway: settings.gateway } : {},
+    );
+  }
   const service = () => kernelDatabase.service();
   const kernelApi = createKernelTraceReadApi(
     {
