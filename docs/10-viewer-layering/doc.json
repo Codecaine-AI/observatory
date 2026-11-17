@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "viewer-layering",
-  "title": "Viewer layering",
+  "title": "Viewer Layering",
   "root": "b-viewer-layering-root-24",
   "blocks": {
     "b-viewer-layering-root-24": {
@@ -9,109 +9,388 @@
       "type": "paragraph",
       "props": {},
       "children": [
-        "b-viewer-layering-viewer-functionality-in-2",
-        "b-viewer-layering-three-layers-3",
-        "b-viewer-layering-layer-0-is-the-shared-vi-4",
-        "b-viewer-layering-layer-1-is-the-observato-5",
-        "b-viewer-layering-layer-2-is-each-harness-6",
-        "b-viewer-layering-where-a-feature-belongs-7",
-        "b-viewer-layering-the-default-destination-8",
-        "b-viewer-layering-an-extension-is-reserved-9",
-        "b-viewer-layering-when-two-harnesses-need-10",
-        "b-viewer-layering-override-semantics-11",
-        "b-viewer-layering-extension-detail-block-p-12",
-        "b-viewer-layering-block-identifiers-are-un-13",
-        "b-viewer-layering-a-missing-provider-a-pr-14",
-        "b-viewer-layering-the-shell-orders-blocks-15",
-        "b-viewer-layering-an-unknown-app-event-16",
-        "b-viewer-layering-the-live-offline-split-17",
-        "b-viewer-layering-with-observatory-running-18",
-        "b-viewer-layering-agents-and-prompt-lab-ar-19",
-        "b-viewer-layering-with-the-harness-running-20",
-        "b-viewer-layering-an-extension-must-render-21",
-        "b-viewer-layering-what-is-deliberately-not-22",
-        "b-viewer-layering-the-extensions-v0-overri-23"
+        "vl-intro",
+        "vl-h-layers",
+        "vl-layers-lead",
+        "vl-stack",
+        "vl-holds-lead",
+        "vl-holds",
+        "vl-h-deps",
+        "vl-deps-lead",
+        "vl-deps-1",
+        "vl-deps-3",
+        "vl-h-where",
+        "vl-where-lead",
+        "vl-where",
+        "vl-h-blocks",
+        "vl-blocks-lead",
+        "vl-blocks-1",
+        "vl-blocks-2",
+        "vl-blocks-3",
+        "vl-blocks-4",
+        "vl-h-live",
+        "vl-live-lead",
+        "vl-live",
+        "vl-live-1",
+        "vl-live-2"
       ]
     },
-    "b-viewer-layering-viewer-functionality-in-2": {
-      "id": "b-viewer-layering-viewer-functionality-in-2",
+    "vl-intro": {
+      "id": "vl-intro",
       "type": "paragraph",
       "props": {},
       "text": [
         {
-          "insert": "Viewer functionality in Observatory has three layers. The boundary is based on whether behavior is common to kernel traces or depends on one harness's application semantics."
+          "insert": "Observatory draws traces with code from 2 repos, in 3 layers. Layer 0 is the trace-viewer repo, layer 1 is Observatory, and layer 2 is a harness extension. This page gives what each layer holds, which layer imports which, where a new feature goes, and what Observatory reads when a harness is offline."
         }
       ],
       "children": []
     },
-    "b-viewer-layering-three-layers-3": {
-      "id": "b-viewer-layering-three-layers-3",
+    "vl-h-layers": {
+      "id": "vl-h-layers",
       "type": "heading",
       "props": {
         "level": 2
       },
       "text": [
         {
-          "insert": "Three layers"
+          "insert": "The Three Layers"
         }
       ],
       "children": []
     },
-    "b-viewer-layering-layer-0-is-the-shared-vi-4": {
-      "id": "b-viewer-layering-layer-0-is-the-shared-vi-4",
+    "vl-layers-lead": {
+      "id": "vl-layers-lead",
       "type": "paragraph",
       "props": {},
       "text": [
         {
-          "insert": "Layer 0 is the shared viewer packages in "
+          "insert": "Each layer imports only the layers below it. Inside layer 0, read-service also imports viewer-core for "
         },
         {
-          "insert": "agent-kernel",
+          "insert": "pushAttr",
           "attributes": {
             "code": true
           }
         },
         {
-          "insert": ": "
+          "insert": ". Layer 2 has no code today, so the stack draws it with no arrow."
+        }
+      ],
+      "children": []
+    },
+    "vl-stack": {
+      "id": "vl-stack",
+      "type": "stack",
+      "props": {
+        "boundaries": [
+          {
+            "after": "Layer 2: Harness Extensions",
+            "rule": "No Observatory page passes a `detailBlockProvider`. `GET /registry/projects` returns the registry field `extensionPackage`, and no code loads it."
+          },
+          {
+            "after": "Layer 1: Observatory",
+            "rule": "Observatory runs no query on `archon.db` or ClickHouse. `createEngineRunPlugins` passes the settings to `createArchonHomeReader` and mounts `createEngineRunRoutes`."
+          },
+          {
+            "after": "Layer 0: trace-viewer",
+            "rule": "No agent-kernel package and no prompt-kit package lists a trace-viewer package in its `package.json`."
+          }
+        ],
+        "nodes": [
+          {
+            "name": "Layer 2: Harness Extensions",
+            "color": "gray",
+            "children": [
+              {
+                "name": "No extension today",
+                "detail": "no harness ships one"
+              }
+            ]
+          },
+          {
+            "name": "Layer 1: Observatory",
+            "color": "blue",
+            "uses": "link:",
+            "columns": 2,
+            "children": [
+              {
+                "name": "Pages",
+                "badge": "ui",
+                "detail": "src/ui/pages/ · `ActionsPage` · `TracesPage` · `RunsPage`"
+              },
+              {
+                "name": "API server",
+                "badge": "host",
+                "detail": "src/server/app.ts · registry · launcher · kernel proxy · `createEngineRunPlugins`"
+              }
+            ]
+          },
+          {
+            "name": "Layer 0: trace-viewer",
+            "color": "green",
+            "uses": "workspace:*",
+            "columns": 2,
+            "children": [
+              {
+                "name": "Viewer packages",
+                "children": [
+                  {
+                    "name": "viewer-shell",
+                    "detail": "packages/viewer-shell/ · `KernelTraceWorkspace`",
+                    "uses": true
+                  },
+                  {
+                    "name": "viewer-ui",
+                    "detail": "packages/viewer-ui/ · span cards · detail panel renderers",
+                    "uses": true
+                  },
+                  {
+                    "name": "viewer-core",
+                    "detail": "packages/viewer-core/ · span types · `buildTraceSpans`"
+                  }
+                ]
+              },
+              {
+                "name": "read-service",
+                "badge": "private",
+                "detail": "packages/read-service/ · `createArchonHomeReader` · `createEngineRunRoutes`"
+              }
+            ]
+          },
+          {
+            "name": "Core Dependencies",
+            "color": "gray",
+            "columns": 2,
+            "children": [
+              {
+                "name": "agent-kernel",
+                "detail": "protocol · db · kernel"
+              },
+              {
+                "name": "prompt-kit",
+                "detail": "prompt-kit/packages/prompt-kit/"
+              }
+            ]
+          }
+        ]
+      },
+      "children": []
+    },
+    "vl-holds-lead": {
+      "id": "vl-holds-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Layer 0 has 2 parts in one repo. The table gives what each part and each layer holds."
+        }
+      ],
+      "children": []
+    },
+    "vl-holds": {
+      "id": "vl-holds",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Layer",
+          "Code",
+          "Holds"
+        ],
+        "rows": [
+          [
+            "0, shared viewer",
+            [
+              {
+                "insert": "trace-viewer/packages/viewer-core",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "viewer-ui",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "viewer-shell",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The span types and "
+              },
+              {
+                "insert": "buildTraceSpans",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", the tree and its span cards, the detail panel and its renderers, the agent catalog and prompt lab components, and "
+              },
+              {
+                "insert": "KernelTraceWorkspace",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "0, read service",
+            [
+              {
+                "insert": "trace-viewer/packages/read-service",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", private"
+              }
+            ],
+            [
+              {
+                "insert": "The central reader, the kernel, gateway and Archon adapters, the read-only SQLite open, and the 3 "
+              },
+              {
+                "insert": "/api/engine-runs",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " routes as an Elysia plugin"
+              }
+            ]
+          ],
+          [
+            "1, host",
+            [
+              {
+                "insert": "observatory/src",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The registry, the launcher, the kernel proxy and the "
+              },
+              {
+                "insert": "pushState",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " router. The Action log, Traces and Runs pages. The kernel trace routes, the mounted engine run routes and their settings."
+              }
+            ]
+          ],
+          [
+            "2, harness extension",
+            "None",
+            "No harness ships a viewer extension today."
+          ]
+        ],
+        "title": "What each layer holds"
+      },
+      "children": []
+    },
+    "vl-h-deps": {
+      "id": "vl-h-deps",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Who Depends on Whom"
+        }
+      ],
+      "children": []
+    },
+    "vl-deps-lead": {
+      "id": "vl-deps-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Observatory depends on trace-viewer, and trace-viewer depends on agent-kernel and prompt-kit. No dependency runs the other way. "
         },
         {
-          "insert": "viewer-core",
+          "insert": "RunsPage.tsx",
           "attributes": {
             "code": true
           }
         },
         {
-          "insert": ", "
+          "insert": " takes "
         },
         {
-          "insert": "viewer-ui",
+          "insert": "reviveEngineRun",
           "attributes": {
             "code": true
           }
         },
         {
-          "insert": ", and "
+          "insert": " from "
         },
         {
-          "insert": "viewer-shell",
+          "insert": "@codecaine-ai/agent-kernel-viewer-read-service/wire",
           "attributes": {
             "code": true
           }
         },
         {
-          "insert": ". They own app-neutral behavior, including the trace tree, span cards, detail shell, generic renderers, and prompt lab. Application-specific behavior must not be hardcoded in these packages. The "
+          "insert": ", a file with type imports only, so the browser bundle holds no server code."
+        }
+      ],
+      "children": []
+    },
+    "vl-deps-1": {
+      "id": "vl-deps-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Observatory takes the 4 trace-viewer packages by their npm names, "
         },
         {
-          "insert": "app:board-render",
+          "insert": "@codecaine-ai/agent-kernel-viewer-*",
           "attributes": {
             "code": true
           }
         },
         {
-          "insert": " detail renderer was moved into Canvas's extension for this reason. The package-boundary check rejects known app-specific references under "
+          "insert": ", as "
         },
         {
-          "insert": "agent-kernel/packages",
+          "insert": "link:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " dependencies in its "
+        },
+        {
+          "insert": "package.json",
           "attributes": {
             "code": true
           }
@@ -122,172 +401,303 @@
       ],
       "children": []
     },
-    "b-viewer-layering-layer-1-is-the-observato-5": {
-      "id": "b-viewer-layering-layer-1-is-the-observato-5",
-      "type": "paragraph",
-      "props": {},
+    "vl-deps-3": {
+      "id": "vl-deps-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
       "text": [
         {
-          "insert": "Layer 1 is the Observatory host. It owns the project registry, routing, per-project viewer mounting, extension loading, and fallback policy. It does not interpret application events."
-        }
-      ],
-      "children": []
-    },
-    "b-viewer-layering-layer-2-is-each-harness-6": {
-      "id": "b-viewer-layering-layer-2-is-each-harness-6",
-      "type": "paragraph",
-      "props": {},
-      "text": [
-        {
-          "insert": "Layer 2 is each harness's "
+          "insert": "The trace-viewer packages take agent-kernel protocol, db and kernel, and prompt-kit, as "
         },
         {
-          "insert": "./viewer-extension",
+          "insert": "workspace:*",
           "attributes": {
             "code": true
           }
         },
         {
-          "insert": " package. It contains only the additions that depend on that harness's application semantics. In Extensions v0, an extension exports a detail-block provider constructed with "
-        },
-        {
-          "insert": "{ apiBase }",
-          "attributes": {
-            "code": true
-          }
-        },
-        {
-          "insert": "."
+          "insert": " dependencies, so they resolve only inside Core."
         }
       ],
       "children": []
     },
-    "b-viewer-layering-where-a-feature-belongs-7": {
-      "id": "b-viewer-layering-where-a-feature-belongs-7",
+    "vl-h-where": {
+      "id": "vl-h-where",
       "type": "heading",
       "props": {
         "level": 2
       },
       "text": [
         {
-          "insert": "Where a feature belongs"
+          "insert": "Where a Feature Belongs"
         }
       ],
       "children": []
     },
-    "b-viewer-layering-the-default-destination-8": {
-      "id": "b-viewer-layering-the-default-destination-8",
+    "vl-where-lead": {
+      "id": "vl-where-lead",
       "type": "paragraph",
       "props": {},
       "text": [
         {
-          "insert": "The default destination is the shared layer. Rendering for protocol-level events, generic tool calls, prompts, or any other behavior that applies to the traces of any kernel belongs in "
+          "insert": "A feature goes in the lowest layer that can own it without the name of one host or one harness. The engine run cards in viewer-ui read only span attributes, such as "
         },
         {
-          "insert": "viewer-ui",
+          "insert": "node_mode",
           "attributes": {
             "code": true
           }
         },
         {
-          "insert": " or "
+          "insert": " and "
         },
         {
-          "insert": "viewer-shell",
+          "insert": "call_count",
           "attributes": {
             "code": true
           }
         },
         {
-          "insert": ", with shared data and API contracts in "
-        },
-        {
-          "insert": "viewer-core",
-          "attributes": {
-            "code": true
-          }
-        },
-        {
-          "insert": "."
+          "insert": ", so viewer-ui names no engine."
         }
       ],
       "children": []
     },
-    "b-viewer-layering-an-extension-is-reserved-9": {
-      "id": "b-viewer-layering-an-extension-is-reserved-9",
-      "type": "paragraph",
-      "props": {},
-      "text": [
-        {
-          "insert": "An extension is reserved for application semantics. Canvas board renders and Canvas transcript-backed thinking, program, and render blocks are examples."
-        }
-      ],
+    "vl-where": {
+      "id": "vl-where",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Feature",
+          "Layer",
+          "Place"
+        ],
+        "rows": [
+          [
+            "A span card or a detail panel for an event type of any kernel or engine",
+            "0",
+            [
+              {
+                "insert": "viewer-ui",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ": "
+              },
+              {
+                "insert": "SpanCard/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "detail-panel/",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "A type, an API path or a trace transform that a host and the UI share",
+            "0",
+            [
+              {
+                "insert": "viewer-core",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "A new trace source, such as the database of another engine",
+            "0",
+            [
+              {
+                "insert": "A new adapter in "
+              },
+              {
+                "insert": "read-service/src/adapters/",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "A page, a route, a setting or a registry field",
+            "1",
+            [
+              {
+                "insert": "Observatory "
+              },
+              {
+                "insert": "src/ui/pages/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "src/ui/router.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "src/server/",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "A detail block that has meaning for only one harness",
+            "2",
+            [
+              {
+                "insert": "A "
+              },
+              {
+                "insert": "detailBlockProvider",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " that the host passes to "
+              },
+              {
+                "insert": "KernelTraceWorkspace",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ]
+        ],
+        "title": "Where a feature goes"
+      },
       "children": []
     },
-    "b-viewer-layering-when-two-harnesses-need-10": {
-      "id": "b-viewer-layering-when-two-harnesses-need-10",
-      "type": "paragraph",
-      "props": {},
-      "text": [
-        {
-          "insert": "When two harnesses need the same extension behavior, that behavior moves into the shared packages and both extensions remove it. Extensions are not a second general-purpose viewer library."
-        }
-      ],
-      "children": []
-    },
-    "b-viewer-layering-override-semantics-11": {
-      "id": "b-viewer-layering-override-semantics-11",
+    "vl-h-blocks": {
+      "id": "vl-h-blocks",
       "type": "heading",
       "props": {
         "level": 2
       },
       "text": [
         {
-          "insert": "Override semantics"
+          "insert": "Detail Blocks From a Host"
         }
       ],
       "children": []
     },
-    "b-viewer-layering-extension-detail-block-p-12": {
-      "id": "b-viewer-layering-extension-detail-block-p-12",
+    "vl-blocks-lead": {
+      "id": "vl-blocks-lead",
       "type": "paragraph",
       "props": {},
       "text": [
         {
-          "insert": "Extension detail-block providers are additive. They contribute blocks to the built-in renderer's blocks. They do not replace the renderer or its view."
+          "insert": "A "
+        },
+        {
+          "insert": "detailBlockProvider",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is a function from a span to a list of detail blocks. "
+        },
+        {
+          "insert": "useDetailBlocks",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "mergeDetailBlockLists",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in viewer-ui "
+        },
+        {
+          "insert": "detail-panel/blocks.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " add its blocks to the blocks of the built-in renderer."
         }
       ],
       "children": []
     },
-    "b-viewer-layering-block-identifiers-are-un-13": {
-      "id": "b-viewer-layering-block-identifiers-are-un-13",
-      "type": "paragraph",
-      "props": {},
+    "vl-blocks-1": {
+      "id": "vl-blocks-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
       "text": [
         {
-          "insert": "Block identifiers are unique within a view. When a provider returns the same identifier more than once, the first block wins. When an extension identifier collides with a built-in identifier, the built-in block wins because built-in blocks are merged first."
+          "insert": "A renderer block wins an id collision, because "
+        },
+        {
+          "insert": "mergeDetailBlockLists",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " takes the renderer blocks first. A provider cannot replace a renderer block."
         }
       ],
       "children": []
     },
-    "b-viewer-layering-a-missing-provider-a-pr-14": {
-      "id": "b-viewer-layering-a-missing-provider-a-pr-14",
-      "type": "paragraph",
-      "props": {},
+    "vl-blocks-2": {
+      "id": "vl-blocks-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
       "text": [
         {
-          "insert": "A missing provider, a provider that throws, or an extension that cannot be loaded or constructed contributes no extension blocks. Generic rendering continues."
+          "insert": "A provider that returns one id twice keeps the first block. A provider that throws adds no blocks."
         }
       ],
       "children": []
     },
-    "b-viewer-layering-the-shell-orders-blocks-15": {
-      "id": "b-viewer-layering-the-shell-orders-blocks-15",
-      "type": "paragraph",
-      "props": {},
+    "vl-blocks-3": {
+      "id": "vl-blocks-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
       "text": [
         {
-          "insert": "The shell orders blocks by slot, then explicit order, then identifier. Slot order is "
+          "insert": "The panel orders the blocks by slot ("
         },
         {
           "insert": "input",
@@ -323,51 +733,53 @@
           }
         },
         {
-          "insert": ". For a tabbed detail view, extension blocks are merged only into the first, default tab. Later tabs remain as the built-in renderer declared them."
-        }
-      ],
-      "children": []
-    },
-    "b-viewer-layering-an-unknown-app-event-16": {
-      "id": "b-viewer-layering-an-unknown-app-event-16",
-      "type": "paragraph",
-      "props": {},
-      "text": [
-        {
-          "insert": "An unknown "
+          "insert": "), then by "
         },
         {
-          "insert": "app:*",
+          "insert": "order",
           "attributes": {
             "code": true
           }
         },
         {
-          "insert": " event resolves through the generic span card and generic facts detail renderer. Raw Details remains available."
+          "insert": ", then by id."
         }
       ],
       "children": []
     },
-    "b-viewer-layering-the-live-offline-split-17": {
-      "id": "b-viewer-layering-the-live-offline-split-17",
+    "vl-blocks-4": {
+      "id": "vl-blocks-4",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "In a tabbed detail view, provider blocks go into the first tab only."
+        }
+      ],
+      "children": []
+    },
+    "vl-h-live": {
+      "id": "vl-h-live",
       "type": "heading",
       "props": {
         "level": 2
       },
       "text": [
         {
-          "insert": "The live/offline split"
+          "insert": "Live and Offline Reads"
         }
       ],
       "children": []
     },
-    "b-viewer-layering-with-observatory-running-18": {
-      "id": "b-viewer-layering-with-observatory-running-18",
+    "vl-live-lead": {
+      "id": "vl-live-lead",
       "type": "paragraph",
       "props": {},
       "text": [
         {
-          "insert": "With Observatory running and a harness down, trace browsing, generic rendering, and blob-backed previews continue from the read-only "
+          "insert": "Observatory opens each "
         },
         {
           "insert": "trace.db",
@@ -376,82 +788,216 @@
           }
         },
         {
-          "insert": ". The concrete trace, blob, and turn-context routes are served locally and take precedence over the passthrough."
-        }
-      ],
-      "children": []
-    },
-    "b-viewer-layering-agents-and-prompt-lab-ar-19": {
-      "id": "b-viewer-layering-agents-and-prompt-lab-ar-19",
-      "type": "paragraph",
-      "props": {},
-      "text": [
-        {
-          "insert": "Agents and prompt lab are unavailable while the harness is down. Extension enrichment that depends on an application-specific live route is also unavailable. For example, Canvas transcript-backed thinking, program, and render blocks require its transcript route. Failure must remove that enrichment without breaking the generic detail view."
-        }
-      ],
-      "children": []
-    },
-    "b-viewer-layering-with-the-harness-running-20": {
-      "id": "b-viewer-layering-with-the-harness-running-20",
-      "type": "paragraph",
-      "props": {},
-      "text": [
-        {
-          "insert": "With the harness running, catalog access, prompt editing for writable projects, and application-specific routes are available through "
+          "insert": " and the "
         },
         {
-          "insert": "/registry/kernels/:id/kernel/**",
+          "insert": "archon.db",
           "attributes": {
             "code": true
           }
         },
         {
-          "insert": ". Observatory passes unmatched routes through to the harness."
+          "insert": " read-only, so the Traces and Runs pages work when no harness runs. Only the kernel proxy needs a live harness."
         }
       ],
       "children": []
     },
-    "b-viewer-layering-an-extension-must-render-21": {
-      "id": "b-viewer-layering-an-extension-must-render-21",
-      "type": "paragraph",
-      "props": {},
-      "text": [
-        {
-          "insert": "An extension must render something useful from "
-        },
-        {
-          "insert": "apiBase",
-          "attributes": {
-            "code": true
-          }
-        },
-        {
-          "insert": " and data available through the DB-backed routes alone. Data from live-only application routes is progressive enhancement and must degrade to no enrichment rather than an error."
-        }
-      ],
-      "children": []
-    },
-    "b-viewer-layering-what-is-deliberately-not-22": {
-      "id": "b-viewer-layering-what-is-deliberately-not-22",
-      "type": "heading",
+    "vl-live": {
+      "id": "vl-live",
+      "type": "structured-table",
       "props": {
-        "level": 2
+        "columns": [
+          "Read",
+          "Source",
+          "Needs a live harness"
+        ],
+        "rows": [
+          [
+            "The session list and one kernel trace on the Traces page",
+            [
+              {
+                "insert": "The project's "
+              },
+              {
+                "insert": "trace.db",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", opened read-only by "
+              },
+              {
+                "insert": "ProjectDatabaseManager",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No"
+          ],
+          [
+            [
+              {
+                "insert": "A kernel path of a project that Observatory does not serve, such as "
+              },
+              {
+                "insert": "catalog/",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The harness at the project's "
+              },
+              {
+                "insert": "readApiBaseUrl",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", through the proxy"
+              }
+            ],
+            [
+              {
+                "insert": "Yes. An offline project answers 503 with "
+              },
+              {
+                "insert": "{ live: false }",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            "The run list and one run tree on the Runs page",
+            [
+              {
+                "insert": "archon.db",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": ".agent-kernel/trace.db",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " of the Archon home, read-only"
+              }
+            ],
+            [
+              {
+                "insert": "No. "
+              },
+              {
+                "insert": "archon serve",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " can run or stop."
+              }
+            ]
+          ],
+          [
+            "The gateway calls of a run and the content of one call",
+            "The trace ClickHouse over HTTP",
+            [
+              {
+                "insert": "No. The read needs "
+              },
+              {
+                "insert": "TRACES_SQL_PASSWORD",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ]
+        ],
+        "title": "What each read needs"
+      },
+      "children": []
+    },
+    "vl-live-1": {
+      "id": "vl-live-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
       },
       "text": [
         {
-          "insert": "What is deliberately not overridable in v0"
+          "insert": "The proxy answers 403 to a request that is not GET or HEAD on a "
+        },
+        {
+          "insert": "catalog/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "prompt-edit-sessions",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " path of a project with "
+        },
+        {
+          "insert": "writable: false",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". No Observatory page sends such a request."
         }
       ],
       "children": []
     },
-    "b-viewer-layering-the-extensions-v0-overri-23": {
-      "id": "b-viewer-layering-the-extensions-v0-overri-23",
-      "type": "paragraph",
-      "props": {},
+    "vl-live-2": {
+      "id": "vl-live-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
       "text": [
         {
-          "insert": "The Extensions v0 override surface is detail blocks only. Span cards, the trace list, overlays, and workspace chrome remain owned by the shared viewer. They become extension surfaces only after a concrete cross-layer need is demonstrated."
+          "insert": "The Traces and Runs pages read their data again every 30 s, so a new trace or a late gateway row shows with no reload. "
+        },
+        {
+          "insert": "Engine Run View",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "20-engine-run-view"
+            }
+          }
+        },
+        {
+          "insert": " gives the delay of a gateway row."
         }
       ],
       "children": []
