@@ -487,6 +487,12 @@ describe("local read-only trace routes", () => {
           topic: "Testing Observatory",
           piSessionCount: 1,
           eventCount: 1,
+          engine: null,
+          runId: null,
+          nodePath: null,
+          invocationId: null,
+          attemptId: null,
+          loopPath: null,
         },
       ],
     });
