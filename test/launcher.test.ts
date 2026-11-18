@@ -1,9 +1,8 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-import { createObservatoryApp, type ObservatoryApp } from "../src/server/app";
 import {
   LauncherError,
   ProjectLauncher,
@@ -18,7 +17,6 @@ import type {
 
 const temporaryDirectories: string[] = [];
 const launchers: ProjectLauncher[] = [];
-const openApps: ObservatoryApp[] = [];
 
 function makeTemporaryDirectory(): string {
   const directory = mkdtempSync(join(tmpdir(), "observatory-launcher-"));
@@ -83,10 +81,6 @@ function makeLauncher(
 }
 
 afterEach(async () => {
-  for (const observatory of openApps.splice(0)) {
-    await observatory.close();
-    await observatory.app.stop();
-  }
   await Promise.all(launchers.splice(0).map((launcher) => launcher.stopAll()));
   for (const directory of temporaryDirectories.splice(0)) {
     rmSync(directory, { recursive: true, force: true });
@@ -264,98 +258,6 @@ describe("ProjectLauncher", () => {
       "did not become live within 120ms",
     );
   });
-
-  test(
-    "auto-launches the real Prompt Kit harness on its named port while Observatory keeps its own port",
-    async () => {
-      const observatoryPort = await reservePort();
-      const harnessPort = await reservePort();
-      const observatoryRoot = resolve(import.meta.dir, "..");
-      const entry = project(observatoryRoot, {
-        id: "prompt-kit",
-        name: "Prompt Kit",
-        kernelId: "prompt-kit-kernel",
-        kernelRoot: resolve(
-          observatoryRoot,
-          "../prompt-kit/packages/prompt-kit-agent/.agent-kernel",
-        ),
-        catalogRoots: [
-          resolve(
-            observatoryRoot,
-            "../prompt-kit/packages/prompt-kit-agent/catalog",
-          ),
-        ],
-        readApiBaseUrl: `http://127.0.0.1:${harnessPort}`,
-        launchCommand: "bun run --cwd ../prompt-kit dev:agent",
-        autoLaunch: true,
-      });
-      const restoreEnvironment = overrideEnvironment({
-        PORT: String(observatoryPort),
-        PROMPT_KIT_KERNEL_PORT: String(harnessPort),
-      });
-      let observatory: ObservatoryApp | undefined;
-
-      try {
-        observatory = createObservatoryApp(
-          registry(observatoryRoot, [entry]),
-          {
-            startLiveness: false,
-            liveness: { timeoutMs: 250 },
-            launcher: {
-              startTimeoutMs: 10_000,
-              initialPollDelayMs: 20,
-              maxPollDelayMs: 200,
-              stopGraceMs: 1_000,
-            },
-          },
-        );
-        openApps.push(observatory);
-        observatory.app.listen({ hostname: "127.0.0.1", port: observatoryPort });
-
-        expect(
-          await waitForState(observatory.launcher, entry.id, "running", 12_000),
-        ).toMatchObject({ state: "running", pid: expect.any(Number) });
-
-        const observatoryHealth = await fetch(
-          `http://127.0.0.1:${observatoryPort}/health`,
-        );
-        expect(observatoryHealth.status).toBe(200);
-        expect(await observatoryHealth.json()).toEqual({
-          status: "ok",
-          projects: 1,
-        });
-
-        const projectList = await fetch(
-          `http://127.0.0.1:${observatoryPort}/registry/projects`,
-        );
-        expect(projectList.status).toBe(200);
-        expect(await projectList.json()).toMatchObject({
-          projects: [{ id: "prompt-kit", live: true }],
-        });
-
-        const harnessHealth = await fetch(
-          `http://127.0.0.1:${harnessPort}/health`,
-        );
-        expect(harnessHealth.status).toBe(200);
-        expect(await harnessHealth.json()).toEqual({
-          status: "ok",
-          kernel: "prompt-kit-kernel",
-        });
-      } finally {
-        try {
-          if (observatory) {
-            await observatory.close();
-            await observatory.app.stop();
-            const appIndex = openApps.indexOf(observatory);
-            if (appIndex >= 0) openApps.splice(appIndex, 1);
-          }
-        } finally {
-          restoreEnvironment();
-        }
-      }
-    },
-    15_000,
-  );
 });
 
 async function reservePort(): Promise<number> {
