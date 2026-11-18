@@ -17,6 +17,8 @@
 #
 # Usage: deploy.sh
 # Log: each line also goes to /Users/services/Library/Logs/services-fleet/observatory/deploy.log.
+# OBSERVATORY_DEPLOY_PIN: a file of "repo sha" lines. Each repo it names deploys that commit, not the head of
+# its branch. autodeploy.sh pins the set it polled, so the set it records is the set that deployed.
 # Overrides (for testing): OBSERVATORY_DEPLOY_ROOT, OBSERVATORY_DEPLOY_STATE_DIR, and
 # OBSERVATORY_DEPLOY_BRANCH, the observatory branch to deploy (default main). Point a test at its own root:
 # the swap and the restart of step 5 always act on the ai.codecaine.observatory agent.
@@ -36,7 +38,7 @@ main() {
     exit 2
   fi
 
-  local root state_dir lock bun label uid agents_dir plist_src plist_dst
+  local root state_dir lock bun label uid agents_dir plist_dst
   root="${OBSERVATORY_DEPLOY_ROOT:-/Users/services/deploy/codecaine-core}"
   state_dir="${OBSERVATORY_DEPLOY_STATE_DIR:-/Users/services/.local/share/services-fleet/observatory}"
   lock=/tmp/ai.codecaine.observatory.deploy.lock
@@ -61,12 +63,14 @@ main() {
   local slot="$root/$next"
   log "deploy into slot $next (running: ${running:-none})"
 
-  sync_repo "$slot" https://github.com/Codecaine-AI/codecaine-core.git main
+  local pin="${OBSERVATORY_DEPLOY_PIN:-}"
+  [ -z "$pin" ] || [ -f "$pin" ] || fail "OBSERVATORY_DEPLOY_PIN names no file: $pin"
+  sync_repo "$slot" https://github.com/Codecaine-AI/codecaine-core.git main "$(pinned codecaine-core)"
   local dir remote branch
   while read -r dir remote; do
     branch=main
     [ "$dir" = observatory ] && branch="${OBSERVATORY_DEPLOY_BRANCH:-main}"
-    sync_repo "$slot/$dir" "$remote" "$branch"
+    sync_repo "$slot/$dir" "$remote" "$branch" "$(pinned "$dir")"
   done < <(members "$slot")
 
   link_bun_links "$slot/observatory"
@@ -87,33 +91,22 @@ main() {
 
   check_slot "$slot"
 
-  # One rename(2) swaps the link, so `current` always names a whole slot.
-  ln -sfn "$next" "$root/current.next"
-  mv -fh "$root/current.next" "$root/current"
-  log "current -> $next"
-
-  plist_src="$root/current/observatory/deploy/services-01/$label.plist"
   plist_dst="$agents_dir/$label.plist"
-  plutil -lint -s "$plist_src"
-  if ! cmp -s "$plist_src" "$plist_dst" 2>/dev/null; then
-    install -m 0644 "$plist_src" "$plist_dst"
-    launchctl bootout "gui/$uid/$label" 2>/dev/null || true
-    wait_unloaded "gui/$uid/$label"
-  fi
-  if launchctl print "gui/$uid/$label" >/dev/null 2>&1; then
-    launchctl kickstart -k "gui/$uid/$label"
-  else
-    launchctl bootstrap "gui/$uid" "$plist_dst"
-  fi
+  plutil -lint -s "$slot/observatory/deploy/services-01/$label.plist" || fail "the new slot's plist is not valid"
 
-  if ! wait_answers 8830 60; then
-    if [ -n "$running" ]; then
-      ln -sfn "$running" "$root/current.next"
-      mv -fh "$root/current.next" "$root/current"
-      launchctl kickstart -k "gui/$uid/$label"
-      fail "127.0.0.1:8830 did not answer on slot $next. current -> $running again"
+  # One rename(2) swaps the link, so `current` always names a whole slot.
+  point_current "$next"
+  log "current -> $next"
+  # From here on, every failure goes back to the running slot. activate never exits the script.
+  if ! activate "$slot" || ! wait_answers 8830 60; then
+    if [ -z "$running" ]; then
+      fail "127.0.0.1:8830 did not answer on slot $next"
     fi
-    fail "127.0.0.1:8830 did not answer on slot $next"
+    point_current "$running"
+    if activate "$root/$running" && wait_answers 8830 60; then
+      fail "127.0.0.1:8830 did not answer on slot $next. current -> $running again, and it answers"
+    fi
+    fail "127.0.0.1:8830 did not answer on slot $next, and slot $running did not come back. Logs: /Users/services/Library/Logs/services-fleet/observatory/"
   fi
 
   local deployed="$state_dir/deployed" line
@@ -128,16 +121,51 @@ main() {
   log "done: slot $next serves 127.0.0.1:8830"
 }
 
-# Clones a repo, or fetches it, and resets it to origin/<branch>. Ignored files (node_modules) stay.
+# Points the current link at a slot in one rename.
+point_current() {
+  ln -sfn "$1" "$root/current.next"
+  mv -fh "$root/current.next" "$root/current"
+}
+
+# Installs the slot's plist when it changed, and (re)starts the agent on the slot that current names.
+# Returns 1 on any launchctl error, and never exits, so the caller can roll back.
+activate() {
+  local src="$1/observatory/deploy/services-01/$label.plist"
+  if ! cmp -s "$src" "$plist_dst" 2>/dev/null; then
+    install -m 0644 "$src" "$plist_dst" || return 1
+    launchctl bootout "gui/$uid/$label" 2>/dev/null || true
+    wait_unloaded "gui/$uid/$label" || return 1
+  fi
+  if launchctl print "gui/$uid/$label" >/dev/null 2>&1; then
+    launchctl kickstart -k "gui/$uid/$label" || return 1
+  else
+    launchctl bootstrap "gui/$uid" "$plist_dst" || return 1
+  fi
+}
+
+# The pinned commit of a repo, or nothing when no pin names it.
+pinned() {
+  [ -n "$pin" ] || return 0
+  awk -v repo="$1" '$1 == repo { print $2 }' "$pin"
+}
+
+# Clones a repo, or fetches it, and resets it to the pinned commit, or else to origin/<branch>.
+# Ignored files (node_modules) stay.
 sync_repo() {
-  local dir="$1" remote="$2" branch="$3"
+  local dir="$1" remote="$2" branch="$3" sha="${4:-}"
   if [ ! -d "$dir/.git" ]; then
-    git clone --quiet "$remote" "$dir"
+    # A partial clone fetches only the files a checkout needs. docs-system has a large history.
+    git clone --quiet --filter=blob:none "$remote" "$dir"
   else
     git -C "$dir" remote set-url origin "$remote"
   fi
   git -C "$dir" fetch --quiet --prune origin "$branch"
-  git -C "$dir" checkout --quiet --force -B "$branch" "origin/$branch"
+  if [ -n "$sha" ]; then
+    git -C "$dir" cat-file -e "$sha^{commit}" 2>/dev/null || fail "$dir has no commit $sha on origin/$branch"
+    git -C "$dir" checkout --quiet --force -B "$branch" "$sha"
+  else
+    git -C "$dir" checkout --quiet --force -B "$branch" "origin/$branch"
+  fi
   git -C "$dir" clean -ffdq
 }
 
@@ -207,7 +235,8 @@ wait_unloaded() {
     launchctl print "$1" >/dev/null 2>&1 || return 0
     sleep 1
   done
-  fail "$1 did not unload within 20 s"
+  log "error: $1 did not unload within 20 s"
+  return 1
 }
 
 fail() {

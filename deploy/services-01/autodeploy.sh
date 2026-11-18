@@ -6,7 +6,7 @@
 # 2. Exits quietly when that set of commits is the deployed one (the deployed file).
 # 3. Exits quietly when that set failed before (the failed file). Delete the file to retry it.
 # 4. Exits quietly when another deploy holds /tmp/ai.codecaine.observatory.deploy.lock.
-# 5. Runs deploy.sh from the running slot. On a failure it writes the set to the failed file.
+# 5. Runs deploy.sh from the running slot, pinned to that set. On a failure it writes the set to the failed file.
 #
 # State: /Users/services/.local/share/services-fleet/observatory/{deployed,failed}.
 # With no running slot yet, run deploy.sh by hand once (README, Install).
@@ -44,8 +44,10 @@ main() {
   fi
 
   log "main moved: $(changed "$deployed" "$target")"
+  # deploy.sh deploys exactly these commits, so a failure below records the set that ran.
+  printf '%s\n' "$target" >"$state_dir/pin"
   local status=0
-  bash "$deploy" || status=$?
+  OBSERVATORY_DEPLOY_PIN="$state_dir/pin" bash "$deploy" || status=$?
   if [ "$status" = 0 ]; then
     rm -f "$state_dir/failed"
   elif [ "$status" = 75 ]; then
