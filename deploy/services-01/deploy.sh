@@ -189,6 +189,8 @@ pinned() {
 sync_repo() {
   local dir="$1" remote="$2" branch="$3" sha="${4:-}"
   if [ ! -d "$dir/.git" ]; then
+    # A clone that a killed deploy left half done. The dir is in the idle slot, so nothing runs from it.
+    rm -rf "$dir"
     # A partial clone fetches only the files a checkout needs. docs-system has a large history.
     git clone --quiet --filter=blob:none "$remote" "$dir"
   else
