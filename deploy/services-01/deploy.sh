@@ -76,8 +76,9 @@ main() {
   (cd "$slot/observatory" && "$bun" run build)
   [ -f "$slot/observatory/src/ui/dist/index.html" ] || fail "the build made no src/ui/dist/index.html"
   for dir in . $(members "$slot" | cut -d' ' -f1); do
-    if [ -n "$(git -C "$slot/$dir" status --porcelain)" ]; then
-      git -C "$slot/$dir" status --short >&2
+    # bun install makes package bin files executable. A mode change is not drift.
+    if [ -n "$(git -c core.fileMode=false -C "$slot/$dir" status --porcelain)" ]; then
+      git -c core.fileMode=false -C "$slot/$dir" status --short >&2
       fail "install or build changed tracked files in $dir (lockfile drift?)"
     fi
   done
