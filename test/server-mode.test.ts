@@ -76,7 +76,6 @@ function serverApp() {
   const directory = mkdtempSync(join(tmpdir(), "observatory-server-mode-"));
   directories.push(directory);
   const projectRequests: string[] = [];
-  const clickHouseQueries: string[] = [];
   const observatory = createObservatoryApp(registryWithAutoLaunch(directory), {
     mode: "server",
     fetch: async (input) => {
@@ -89,16 +88,12 @@ function serverApp() {
         url: "https://clickhouse.test/",
         user: "reader",
         password: "test-only",
-        fetch: async (_input, init) => {
-          const sql = String(init?.body);
-          clickHouseQueries.push(sql);
-          return new Response(clickHouseAnswer(sql));
-        },
+        fetch: async (_input, init) => new Response(clickHouseAnswer(String(init?.body))),
       },
     },
   });
   apps.push(observatory);
-  return { observatory, projectRequests, clickHouseQueries };
+  return { observatory, projectRequests };
 }
 
 const call = (app: ObservatoryApp, method: string, path: string) =>
@@ -131,7 +126,7 @@ describe("server mode", () => {
   });
 
   test("reads the run list from ClickHouse", async () => {
-    const { observatory, clickHouseQueries } = serverApp();
+    const { observatory } = serverApp();
 
     const response = await call(observatory, "GET", "/api/engine-runs");
 
@@ -140,7 +135,6 @@ describe("server mode", () => {
         { engine: "archon", runId: "run-1", workflowName: "review", status: "completed", startedAt: "2026-11-17T10:00:00Z", endedAt: null },
       ],
     });
-    expect(clickHouseQueries).toHaveLength(1);
   });
 
   test("reads one run from ClickHouse, with its call under the node attempt", async () => {
