@@ -45,9 +45,12 @@ main() {
 
   log "main moved: $(changed "$deployed" "$target")"
   # deploy.sh deploys exactly these commits, so a failure below records the set that ran.
-  printf '%s\n' "$target" >"$state_dir/pin"
-  local status=0
-  OBSERVATORY_DEPLOY_PIN="$state_dir/pin" bash "$deploy" || status=$?
+  # Each poll gets its own pin file, so a second poll cannot change the set of this one.
+  local pin status=0
+  pin="$(mktemp "$state_dir/pin.XXXXXX")"
+  printf '%s\n' "$target" >"$pin"
+  OBSERVATORY_DEPLOY_PIN="$pin" bash "$deploy" || status=$?
+  rm -f "$pin"
   if [ "$status" = 0 ]; then
     rm -f "$state_dir/failed"
   elif [ "$status" = 75 ]; then

@@ -11,12 +11,14 @@
 # 4. Starts the new slot on 127.0.0.1:18830 and checks that it answers. Stops it again.
 # 5. Points `current` at the new slot in one rename, and restarts ai.codecaine.observatory.
 # 6. Waits for a new process to answer on 127.0.0.1:8830, then names the slot in the live file.
-#    On a failure or a signal it points `current` back and restarts the old slot.
+#    On any exit before that (an error, a failed check, a signal) it points `current` back and
+#    restarts the old slot.
 # 7. Logs the commit of each repo and writes them to the deployed file.
 #
 # A failure before step 5 leaves the running slot, the link, and the service untouched. The build slot is
-# always the one that the live file does not name, and a deploy first repairs a link that an interrupted
-# deploy left on an unchecked slot.
+# never the one the API process runs from (its working folder), and a deploy first repairs the link and
+# the live file when an interrupted deploy left them on another slot. A SIGKILL leaves the lock, which
+# the next deploy reports.
 #
 # Usage: deploy.sh
 # Log: each line also goes to /Users/services/Library/Logs/services-fleet/observatory/deploy.log.
@@ -41,42 +43,50 @@ main() {
     exit 2
   fi
 
-  local root state_dir lock bun label uid agents_dir plist_dst
+  # Globals, not locals: the EXIT trap runs after main returns and needs them.
   root="${OBSERVATORY_DEPLOY_ROOT:-/Users/services/deploy/codecaine-core}"
   state_dir="${OBSERVATORY_DEPLOY_STATE_DIR:-/Users/services/.local/share/services-fleet/observatory}"
   lock=/tmp/ai.codecaine.observatory.deploy.lock
   bun=/opt/homebrew/bin/bun
   label=ai.codecaine.observatory
   uid="$(id -u)"
-  agents_dir=/Users/services/Library/LaunchAgents
+  plist_dst="/Users/services/Library/LaunchAgents/$label.plist"
+  running="" swap_state=""
 
   mkdir -p "$root" "$state_dir" /Users/services/Library/Logs/services-fleet/observatory
   if ! mkdir "$lock" 2>/dev/null; then
     log "busy: another deploy holds $lock. If none is running: rmdir $lock"
     exit 75
   fi
-  # The trap runs after main returns, when its locals are gone, so it gets the path now.
-  # shellcheck disable=SC2064
-  trap "rmdir '$lock' 2>/dev/null || true" EXIT
+  trap on_exit EXIT
+  trap 'exit 130' INT TERM HUP
 
-  plist_dst="$agents_dir/$label.plist"
-  # The live file names the slot that last passed the 8830 check. Only that slot is safe to keep, so the
-  # build always goes to the other one, whatever an interrupted deploy left in the current link.
-  local running="" next linked=""
-  running="$(cat "$state_dir/live" 2>/dev/null || true)"
+  # The slot to keep is the one the API process runs from. The live file names the slot that last
+  # passed the 8830 check, for when no process runs. The build always goes to the other slot.
+  local live linked="" actual next
+  live="$(cat "$state_dir/live" 2>/dev/null || true)"
   [ -L "$root/current" ] && linked="$(basename "$(readlink "$root/current")")"
-  [ -n "$running" ] || running="$linked"
+  actual="$(process_slot)"
+  [ "$actual" != unknown ] || fail "the API runs from outside slots a and b. Stop it or fix it by hand"
+  running="${actual:-${live:-$linked}}"
   if [ -n "$running" ] && [ "$linked" != "$running" ]; then
-    log "repair: current names slot ${linked:-none}, which never passed the check. current -> $running"
+    log "repair: current names slot ${linked:-none}, but slot $running is the one to keep. current -> $running"
     point_current "$running"
-    activate "$root/$running" "$(service_pid)" || fail "slot $running did not start again"
+  fi
+  if [ -n "$actual" ] && [ "$live" != "$actual" ]; then
+    write_live "$actual"
+  fi
+  if [ -n "$running" ] && [ -z "$actual" ]; then
+    log "repair: the API does not run. Starting slot $running"
+    activate "$root/$running" "" || fail "slot $running did not start"
+    write_live "$running"
   fi
   next=a
   [ "$running" = a ] && next=b
   local slot="$root/$next"
   log "deploy into slot $next (running: ${running:-none})"
 
-  local pin="${OBSERVATORY_DEPLOY_PIN:-}"
+  pin="${OBSERVATORY_DEPLOY_PIN:-}"
   [ -z "$pin" ] || [ -f "$pin" ] || fail "OBSERVATORY_DEPLOY_PIN names no file: $pin"
   sync_repo "$slot" https://github.com/Codecaine-AI/codecaine-core.git main "$(pinned codecaine-core)"
   local dir remote branch
@@ -106,15 +116,14 @@ main() {
 
   plutil -lint -s "$slot/observatory/deploy/services-01/$label.plist" || fail "the new slot's plist is not valid"
 
-  # One rename(2) swaps the link, so `current` always names a whole slot. From here until the live
-  # file names the new slot, every failure and every signal goes back to the running slot.
-  trap 'trap - INT TERM HUP; roll_back "the deploy was stopped by a signal"' INT TERM HUP
+  # One rename(2) swaps the link, so `current` always names a whole slot. Until swap_state is
+  # committed, any exit (an error, a failed check, a signal) rolls back in on_exit.
+  swap_state=swapped
   point_current "$next"
   log "current -> $next"
-  activate "$slot" "$(service_pid)" || roll_back "slot $next did not answer on 127.0.0.1:8830"
-  printf '%s\n' "$next" >"$state_dir/live.next"
-  mv -f "$state_dir/live.next" "$state_dir/live"
-  trap - INT TERM HUP
+  activate "$slot" "$(service_pid)" || fail "slot $next did not answer on 127.0.0.1:8830"
+  write_live "$next"
+  swap_state=committed
 
   local deployed="$state_dir/deployed" line
   : >"$deployed.next"
@@ -134,14 +143,44 @@ point_current() {
   mv -fh "$root/current.next" "$root/current"
 }
 
-# Points current back at the running slot and starts it again, then fails with the reason in $1.
-roll_back() {
-  [ -n "$running" ] || fail "$1"
-  point_current "$running"
-  if activate "$root/$running" "$(service_pid)"; then
-    fail "$1. current -> $running again, and it answers"
+# Releases the lock. After a swap that did not commit, it first points current back at the running
+# slot and starts it again. It never stops early, so the lock always goes.
+on_exit() {
+  local status=$?
+  set +e
+  if [ "$swap_state" = swapped ]; then
+    swap_state=rolled-back
+    if [ -n "$running" ]; then
+      log "rollback: the deploy stopped after the swap (exit $status). current -> $running"
+      point_current "$running"
+      if activate "$root/$running" "$(service_pid)"; then
+        log "rollback: slot $running answers on 127.0.0.1:8830"
+      else
+        log "error: slot $running did not come back. The next deploy keeps the slot the API runs from. Logs: /Users/services/Library/Logs/services-fleet/observatory/"
+      fi
+    fi
   fi
-  fail "$1, and slot $running did not come back. Logs: /Users/services/Library/Logs/services-fleet/observatory/"
+  rmdir "$lock" 2>/dev/null
+  exit "$status"
+}
+
+# The slot (a or b) that the API process runs from, by its working folder. Nothing when it does not
+# run, and "unknown" when it runs from elsewhere.
+process_slot() {
+  local pid cwd
+  pid="$(service_pid)"
+  [ -n "$pid" ] || return 0
+  cwd="$(lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')"
+  case "$cwd" in
+    "$root"/a/*) echo a ;;
+    "$root"/b/*) echo b ;;
+    *) echo unknown ;;
+  esac
+}
+
+write_live() {
+  printf '%s\n' "$1" >"$state_dir/live.next"
+  mv -f "$state_dir/live.next" "$state_dir/live"
 }
 
 # The pid of the API agent, or nothing when it does not run.

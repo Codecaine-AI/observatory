@@ -7,7 +7,8 @@
 # other setting. deploy.sh also runs this script on a test port to check a new build.
 set -euo pipefail
 
-app="$(cd "$(dirname "$0")/../.." && pwd)"
+# The physical path: the slot that current names now. A later swap does not move this process.
+app="$(cd "$(dirname "$0")/../.." && pwd -P)"
 env_file="${OBSERVATORY_ENV_FILE:-/Users/services/workspace/.env}"
 bun=/opt/homebrew/bin/bun
 
