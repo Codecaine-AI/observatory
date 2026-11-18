@@ -94,7 +94,7 @@ describe("server mode", () => {
     expect(projectRequests).toEqual([]);
     // Local mode marks an auto-launch project "starting" before createObservatoryApp returns.
     expect(observatory.launcher.status(PROJECT_ID)).toEqual({ state: "idle" });
-    expect(observatory.launcher.start(PROJECT_ID)).rejects.toThrow("not found");
+    await expect(observatory.launcher.start(PROJECT_ID)).rejects.toThrow("not found");
   });
 
   test("reads the run list from ClickHouse", async () => {
