@@ -144,9 +144,11 @@ point_current() {
 }
 
 # Releases the lock. After a swap that did not commit, it first points current back at the running
-# slot and starts it again. It never stops early, so the lock always goes.
+# slot and starts it again. It ignores further signals and never stops early, so the lock always goes.
 on_exit() {
   local status=$?
+  # A second signal must not stop the rollback or the lock release.
+  trap '' INT TERM HUP
   set +e
   if [ "$swap_state" = swapped ]; then
     swap_state=rolled-back
