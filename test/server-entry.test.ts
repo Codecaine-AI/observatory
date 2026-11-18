@@ -50,8 +50,9 @@ describe("the server entry point", () => {
   test("starts in server mode with no registry.json, where local mode fails", async () => {
     const server = start({ OBSERVATORY_MODE: "server", TRACES_SQL_PASSWORD: "test-only" });
 
-    const output = await readUntil(server.child.stdout as ReadableStream<Uint8Array>, "Mode: server");
+    const output = await readUntil(server.child.stdout as ReadableStream<Uint8Array>, "Registry: none (server mode)");
 
+    expect(output).toContain("Mode: server");
     expect(output).toContain("Registry: none (server mode)");
     const local = start({});
     expect(await local.child.exited).not.toBe(0);
