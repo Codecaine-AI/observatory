@@ -50,7 +50,9 @@ main() {
     log "busy: another deploy holds $lock. If none is running: rmdir $lock"
     exit 75
   fi
-  trap 'rmdir "$lock" 2>/dev/null || true' EXIT
+  # The trap runs after main returns, when its locals are gone, so it gets the path now.
+  # shellcheck disable=SC2064
+  trap "rmdir '$lock' 2>/dev/null || true" EXIT
 
   local running="" next
   [ -L "$root/current" ] && running="$(basename "$(readlink "$root/current")")"
