@@ -1,0 +1,1176 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-f4ca5fabc77b87783862350fef0c8a88",
+  "title": "Server Mode",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "sm-intro",
+        "sm-h-off",
+        "sm-off-lead",
+        "sm-off",
+        "sm-off-404",
+        "sm-off-ui",
+        "sm-h-set",
+        "sm-set-lead",
+        "sm-set",
+        "sm-set-exit",
+        "sm-set-env",
+        "sm-set-deploy",
+        "sm-h-keep",
+        "sm-keep-lead",
+        "sm-keep",
+        "sm-keep-reader",
+        "sm-keep-diff"
+      ]
+    },
+    "sm-intro": {
+      "id": "sm-intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Server mode is the read-only mode of the Observatory API for a shared host, such as services-01. With "
+        },
+        {
+          "insert": "OBSERVATORY_MODE=server",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the API mounts no route that writes, runs a command, or reaches a registry project, and it reads the engine runs from the trace ClickHouse. The UI is the same in both modes. This page gives what server mode turns off, the settings of the services-01 LaunchAgent, and what stays on."
+        }
+      ],
+      "children": []
+    },
+    "sm-h-off": {
+      "id": "sm-h-off",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What Server Mode Turns Off"
+        }
+      ],
+      "children": []
+    },
+    "sm-off-lead": {
+      "id": "sm-off-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "observatoryModeFromEnv",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "src/server/engine-runs.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "src/server/engine-runs.ts",
+              "symbol": "observatoryModeFromEnv"
+            }
+          }
+        },
+        {
+          "insert": " trims "
+        },
+        {
+          "insert": "OBSERVATORY_MODE",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and reads it at start. An unset or empty value and "
+        },
+        {
+          "insert": "local",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " give local mode, "
+        },
+        {
+          "insert": "server",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " gives server mode, and any other value throws. Server mode turns off 10 parts of local mode."
+        }
+      ],
+      "children": []
+    },
+    "sm-off": {
+      "id": "sm-off",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Part",
+          "In Local Mode",
+          "In Server Mode",
+          "Source"
+        ],
+        "rows": [
+          [
+            "Registry load at start",
+            [
+              {
+                "insert": "loadRegistry",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " reads "
+              },
+              {
+                "insert": "OBSERVATORY_REGISTRY_PATH",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", default "
+              },
+              {
+                "insert": "registry.json",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". The start fails when the file is missing."
+              }
+            ],
+            [
+              {
+                "insert": "Skipped. The entry point passes an empty registry and logs "
+              },
+              {
+                "insert": "Registry: none (server mode)",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ],
+            [
+              {
+                "insert": "src/server/index.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Registry projects in the app",
+            [
+              {
+                "insert": "createObservatoryApp",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " builds the liveness monitor, the launcher and the project routes from the registry projects."
+              }
+            ],
+            [
+              {
+                "insert": "createObservatoryApp",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " replaces the projects with an empty list. A registry that a caller passes in reaches no route, probe or launch."
+              }
+            ],
+            [
+              {
+                "insert": "src/server/app.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Auto-launch",
+            [
+              {
+                "insert": "launcher.autoLaunch()",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " starts each auto-launch project, unless the option "
+              },
+              {
+                "insert": "autoLaunch",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " is false."
+              }
+            ],
+            "Off",
+            [
+              {
+                "insert": "src/server/app.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Liveness poll",
+            [
+              {
+                "insert": "liveness.start()",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " polls each registry project, unless the option "
+              },
+              {
+                "insert": "startLiveness",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " is false."
+              }
+            ],
+            "Off",
+            [
+              {
+                "insert": "src/server/app.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "GET /registry/projects",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Probes each project with "
+              },
+              {
+                "insert": "liveness.probeAll()",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and returns its state."
+              }
+            ],
+            [
+              {
+                "insert": "Returns "
+              },
+              {
+                "insert": "{\"projects\":[]}",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " with no probe."
+              }
+            ],
+            [
+              {
+                "insert": "src/server/app.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Kernel read routes of each project",
+            [
+              {
+                "insert": "createKernelTraceReadApi",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " mounts the trace read routes of each project's trace.db."
+              }
+            ],
+            "Not mounted",
+            [
+              {
+                "insert": "src/server/app.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "POST /registry/projects/:id/launch",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "/stop",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Starts or stops the launch command of a project.",
+            "Not mounted",
+            [
+              {
+                "insert": "src/server/app.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "GET /registry/projects/:id/logs",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Returns the logs of a launched project.",
+            "Not mounted",
+            [
+              {
+                "insert": "src/server/app.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "ALL /registry/kernels/:id/kernel/*",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Proxies the request to a live project. A catalog or prompt edit session write needs a "
+              },
+              {
+                "insert": "writable",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " project."
+              }
+            ],
+            "Not mounted",
+            [
+              {
+                "insert": "src/server/app.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "GET /api/actions",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "readActions",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " reads the action log of the machine. It returns no records when the file is missing."
+              }
+            ],
+            "Not mounted",
+            [
+              {
+                "insert": "src/server/actions.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ]
+        ],
+        "title": "Parts that server mode turns off"
+      },
+      "children": []
+    },
+    "sm-off-404": {
+      "id": "sm-off-404",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "A route that server mode does not mount answers 404. "
+        },
+        {
+          "insert": "test/server-mode.test.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "test/server-mode.test.ts"
+            }
+          }
+        },
+        {
+          "insert": " checks the 404 of the launch, stop, logs, project kernel and actions routes."
+        }
+      ],
+      "children": []
+    },
+    "sm-off-ui": {
+      "id": "sm-off-ui",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "The UI keeps its 3 pages in "
+        },
+        {
+          "insert": "src/ui/router.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "src/ui/router.ts"
+            }
+          }
+        },
+        {
+          "insert": ". The Traces page and the Action log page show no data in server mode, because their routes are not mounted."
+        }
+      ],
+      "children": []
+    },
+    "sm-h-set": {
+      "id": "sm-h-set",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Settings of the LaunchAgent"
+        }
+      ],
+      "children": []
+    },
+    "sm-set-lead": {
+      "id": "sm-set-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The LaunchAgent "
+        },
+        {
+          "insert": "deploy/services-01/ai.codecaine.observatory.plist",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "deploy/services-01/ai.codecaine.observatory.plist"
+            }
+          }
+        },
+        {
+          "insert": " sets 5 of the 6 Observatory variables, besides "
+        },
+        {
+          "insert": "HOME",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "PATH",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Its program, "
+        },
+        {
+          "insert": "deploy/services-01/run.sh",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "deploy/services-01/run.sh"
+            }
+          }
+        },
+        {
+          "insert": ", exports the sixth, "
+        },
+        {
+          "insert": "TRACES_SQL_PASSWORD",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and then starts "
+        },
+        {
+          "insert": "src/server/index.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "sm-set": {
+      "id": "sm-set",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Variable",
+          "Value on services-01",
+          "When unset"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "OBSERVATORY_MODE",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "server",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Local mode. "
+              },
+              {
+                "insert": "run.sh",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " exits before the start when the variable is unset."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "OBSERVATORY_API_PORT",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "8830",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". The API listens on 127.0.0.1 only."
+              }
+            ],
+            [
+              {
+                "insert": "PORT",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", else 4890"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "OBSERVATORY_ARCHON_HOME",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "/Users/services/.archon",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". Server mode reads only its "
+              },
+              {
+                "insert": ".agent-kernel/trace.db",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ],
+            [
+              {
+                "insert": "~/.archon",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "TRACES_SQL_URL",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "http://127.0.0.1:8123/",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "https://traces-sql.lascari.dev/",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "TRACES_SQL_USER",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "traces_ro",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "traces_ro",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "TRACES_SQL_PASSWORD",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "run.sh",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " reads the last "
+              },
+              {
+                "insert": "TRACES_SQL_PASSWORD=",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " line of "
+              },
+              {
+                "insert": "/Users/services/workspace/.env",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", which envsync writes."
+              }
+            ],
+            "The server exits with code 1 in server mode."
+          ]
+        ],
+        "title": "Variables of the services-01 LaunchAgent"
+      },
+      "children": []
+    },
+    "sm-set-exit": {
+      "id": "sm-set-exit",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "In server mode, "
+        },
+        {
+          "insert": "src/server/index.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "src/server/index.ts"
+            }
+          }
+        },
+        {
+          "insert": " exits with code 1 when "
+        },
+        {
+          "insert": "TRACES_SQL_PASSWORD",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is empty or unset, and names the variable on stderr. "
+        },
+        {
+          "insert": "createEngineRunPlugins",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " throws the same error when a caller builds a server-mode app with no gateway."
+        }
+      ],
+      "children": []
+    },
+    "sm-set-env": {
+      "id": "sm-set-env",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "run.sh",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " exits with code 1 when "
+        },
+        {
+          "insert": "/Users/services/workspace/.env",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is missing, or when its group or others have any permission. Run "
+        },
+        {
+          "insert": "chmod 600",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on the file to fix the second error."
+        }
+      ],
+      "children": []
+    },
+    "sm-set-deploy": {
+      "id": "sm-set-deploy",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The deploy README, "
+        },
+        {
+          "insert": "deploy/services-01/README.md",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "deploy/services-01/README.md"
+            }
+          }
+        },
+        {
+          "insert": ", gives the slot layout, the deploy command, the install steps and the fix for a stale deploy lock."
+        }
+      ],
+      "children": []
+    },
+    "sm-h-keep": {
+      "id": "sm-h-keep",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What Stays On"
+        }
+      ],
+      "children": []
+    },
+    "sm-keep-lead": {
+      "id": "sm-keep-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Server mode keeps 4 route groups, and none of them writes. The engine run routes and the home's kernel routes keep the JSON shape that the Runs page reads in local mode."
+        }
+      ],
+      "children": []
+    },
+    "sm-keep": {
+      "id": "sm-keep",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Route",
+          "What It Reads in Server Mode"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "GET /health",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Nothing. It returns "
+              },
+              {
+                "insert": "{\"status\":\"ok\",\"projects\":0}",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "GET /registry/projects",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Nothing. It returns "
+              },
+              {
+                "insert": "{\"projects\":[]}",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "GET /api/engine-runs",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and its 2 sub-routes"
+              }
+            ],
+            [
+              {
+                "insert": "The reader of "
+              },
+              {
+                "insert": "createClickHouseReader",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". It reads the Archon runs and the gateway calls from the ClickHouse database "
+              },
+              {
+                "insert": "agents",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", and the kernel spans from the home's "
+              },
+              {
+                "insert": ".agent-kernel/trace.db",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "/api/archon-home/kernel/*",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The kernel trace read routes on the home's "
+              },
+              {
+                "insert": ".agent-kernel/trace.db",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". "
+              },
+              {
+                "insert": "ArchonKernelDatabase",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " opens it read-only on first use, and the routes return no data while the file is missing."
+              }
+            ]
+          ]
+        ],
+        "title": "Routes that server mode serves"
+      },
+      "children": []
+    },
+    "sm-keep-reader": {
+      "id": "sm-keep-reader",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "createEngineRunPlugins",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "src/server/engine-runs.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "src/server/engine-runs.ts",
+              "symbol": "createEngineRunPlugins"
+            }
+          }
+        },
+        {
+          "insert": " picks the reader by mode. Local mode uses "
+        },
+        {
+          "insert": "createArchonHomeReader",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on the home's "
+        },
+        {
+          "insert": "archon.db",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The ClickHouse reader of the trace-viewer read service differs from it in 3 ways that a reader can see."
+        }
+      ],
+      "children": []
+    },
+    "sm-keep-diff": {
+      "id": "sm-keep-diff",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Case",
+          "What the Reader Sees"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "ClickHouse error 202, "
+              },
+              {
+                "insert": "TOO_MANY_SIMULTANEOUS_QUERIES",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The query gets up to 3 retries, after 150 ms, 400 ms and 1000 ms. A fourth error 202 fails the query, as any other ClickHouse error does."
+          ],
+          [
+            "A failed ClickHouse query",
+            "A failed run list read or run read answers 500. A failed read of the calls of a run gives a tree with no call counts and no pending mark."
+          ],
+          [
+            "Node mode",
+            "ClickHouse holds no workflow YAML, so the reader knows the node mode only for a code node and from the provider."
+          ],
+          [
+            "Kernel spans",
+            "The kernel spans come only from the trace.db of the services-01 home. A run whose kernel spans are not in that file shows none."
+          ]
+        ],
+        "title": "How the ClickHouse reader differs from the archon.db reader"
+      },
+      "children": []
+    }
+  }
+}
