@@ -51,7 +51,8 @@ main() {
   label=ai.codecaine.observatory
   uid="$(id -u)"
   plist_dst="/Users/services/Library/LaunchAgents/$label.plist"
-  running="" swap_state=""
+  running="" swap_state="" check_pid=""
+  check_log=/Users/services/Library/Logs/services-fleet/observatory/check.log
 
   mkdir -p "$root" "$state_dir" /Users/services/Library/Logs/services-fleet/observatory
   if ! mkdir "$lock" 2>/dev/null; then
@@ -78,8 +79,12 @@ main() {
   fi
   if [ -n "$running" ] && [ -z "$actual" ]; then
     log "repair: the API does not run. Starting slot $running"
-    activate "$root/$running" "" || fail "slot $running did not start"
-    write_live "$running"
+    # A slot that cannot start must not block the build of a fix. Nothing runs, so either slot is free.
+    if activate "$root/$running" ""; then
+      write_live "$running"
+    else
+      log "warning: slot $running did not start. Building the other slot anyway"
+    fi
   fi
   next=a
   [ "$running" = a ] && next=b
@@ -162,6 +167,8 @@ on_exit() {
       fi
     fi
   fi
+  # A check server of a stopped deploy would answer the next check for any build.
+  [ -z "$check_pid" ] || kill "$check_pid" 2>/dev/null
   rmdir "$lock" 2>/dev/null
   exit "$status"
 }
@@ -279,7 +286,7 @@ LINKS
 
 # Starts the slot's server on 127.0.0.1:18830 with the plist settings, and checks it answers.
 check_slot() {
-  local slot="$1" pid
+  local slot="$1"
   log "check slot on 127.0.0.1:18830"
   # A check server left by a killed deploy would answer for any build.
   if curl -fsS --max-time 2 -o /dev/null http://127.0.0.1:18830/registry/projects 2>/dev/null; then
@@ -287,19 +294,17 @@ check_slot() {
   fi
   OBSERVATORY_MODE=server OBSERVATORY_API_PORT=18830 OBSERVATORY_ARCHON_HOME=/Users/services/.archon \
     TRACES_SQL_URL=http://127.0.0.1:8123/ TRACES_SQL_USER=traces_ro \
-    bash "$slot/observatory/deploy/services-01/run.sh" >/tmp/ai.codecaine.observatory.check.log 2>&1 &
-  pid=$!
+    bash "$slot/observatory/deploy/services-01/run.sh" >"$check_log" 2>&1 &
+  # on_exit stops the check server when the deploy fails or stops here.
+  check_pid=$!
   if ! wait_answers 18830 30; then
-    kill "$pid" 2>/dev/null || true
-    tail -n 20 /tmp/ai.codecaine.observatory.check.log >&2 || true
+    tail -n 20 "$check_log" >&2 || true
     fail "the new slot did not answer on 127.0.0.1:18830"
   fi
-  if ! curl -fsS --max-time 30 -o /dev/null http://127.0.0.1:18830/api/engine-runs; then
-    kill "$pid" 2>/dev/null || true
-    fail "the new slot did not list the engine runs"
-  fi
-  kill "$pid" 2>/dev/null || true
-  wait "$pid" 2>/dev/null || true
+  curl -fsS --max-time 30 -o /dev/null http://127.0.0.1:18830/api/engine-runs || fail "the new slot did not list the engine runs"
+  kill "$check_pid" 2>/dev/null || true
+  wait "$check_pid" 2>/dev/null || true
+  check_pid=""
 }
 
 # Waits up to $2 s for GET /registry/projects on a loopback port to answer 200.
