@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Observatory auto deploy: every 15 minutes, deploys when main of any of its 10 repos moved (autodeploy.sh).
+  A merge to main reaches https://traces.lascari.dev within about 15 minutes plus the build.
+  Source of truth: github.com/Codecaine-AI/observatory (deploy/services-01/).
+  Installed by hand (README, Install), not by deploy.sh, which never restarts this agent.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>ai.codecaine.observatory.autodeploy</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/services/deploy/codecaine-core/current/observatory/deploy/services-01/autodeploy.sh</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/services/deploy/codecaine-core</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>/Users/services</string>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+  <key>StartInterval</key>
+  <integer>900</integer>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/services/Library/Logs/services-fleet/observatory/autodeploy.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/services/Library/Logs/services-fleet/observatory/autodeploy.log</string>
+</dict>
+</plist>

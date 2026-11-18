@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Observatory API in server mode on 127.0.0.1:8830. Caddy serves https://traces.lascari.dev and proxies its API here.
+  Source of truth: github.com/Codecaine-AI/observatory (deploy/services-01/).
+  Installed to /Users/services/Library/LaunchAgents/ by deploy.sh and loaded in the services user's GUI session.
+  It runs the slot that /Users/services/deploy/codecaine-core/current names. The password is not in this file:
+  run.sh reads TRACES_SQL_PASSWORD from /Users/services/workspace/.env, which envsync writes.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>ai.codecaine.observatory</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/services/deploy/codecaine-core/current/observatory/deploy/services-01/run.sh</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/services/deploy/codecaine-core/current/observatory</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>/Users/services</string>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>OBSERVATORY_MODE</key>
+    <string>server</string>
+    <key>OBSERVATORY_API_PORT</key>
+    <string>8830</string>
+    <key>OBSERVATORY_ARCHON_HOME</key>
+    <string>/Users/services/.archon</string>
+    <key>TRACES_SQL_URL</key>
+    <string>http://127.0.0.1:8123/</string>
+    <key>TRACES_SQL_USER</key>
+    <string>traces_ro</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>ExitTimeOut</key>
+  <integer>20</integer>
+  <key>ProcessType</key>
+  <string>Standard</string>
+  <key>StandardOutPath</key>
+  <string>/Users/services/Library/Logs/services-fleet/observatory/api.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/services/Library/Logs/services-fleet/observatory/api.err.log</string>
+</dict>
+</plist>
