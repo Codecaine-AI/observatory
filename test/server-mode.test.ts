@@ -3,6 +3,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { ARCHON_RUN_ROWS_SQL, RUN_CALLS_SQL } from "@codecaine-ai/agent-kernel-viewer-read-service";
+
 import { createObservatoryApp, type ObservatoryApp } from "../src/server/app";
 import { observatoryModeFromEnv } from "../src/server/engine-runs";
 import type { LoadedRegistry, ResolvedRegistryProject } from "../src/server/registry";
@@ -37,6 +39,38 @@ function registryWithAutoLaunch(directory: string): LoadedRegistry {
   return { path: join(directory, "registry.json"), directory, registryVersion: 1, projects: [project] };
 }
 
+const CALL_ID = "0b9d4c55-2f7e-4c1a-9a43-5f0d6c2e8a11";
+const SOURCE = { machine: "services-01", file_id: "file-1" };
+const nodeData = { node: { id: "review", kind: "agent" }, invocation: { id: "inv-1" }, attempt: { id: "att-1" }, provider: "claude" };
+const jsonLines = (rows: object[]) => rows.map((row) => `${JSON.stringify(row)}\n`).join("");
+
+/** The ClickHouse rows of run-1: its run_links source, its run row, one agent node, and one gateway call. */
+function clickHouseAnswer(sql: string): string {
+  if (sql.startsWith(ARCHON_RUN_ROWS_SQL)) {
+    const runRow = { id: "run-1", workflow_name: "review", status: "completed", started_at: "2026-11-17 10:00:00", completed_at: "2026-11-17 10:00:05", metadata: null };
+    const nodeRow = (eventType: string, order: number) => ({
+      id: `event-${order}`, event_order: order, event_type: eventType, step_name: "review",
+      data: JSON.stringify(nodeData), created_at: "2026-11-17 10:00:01",
+    });
+    return jsonLines([
+      { kind: "source", ...SOURCE, snapshot_table: "", raw: "" },
+      { kind: "row", ...SOURCE, snapshot_table: "remote_agent_workflow_runs", raw: JSON.stringify(runRow) },
+      { kind: "row", ...SOURCE, snapshot_table: "remote_agent_workflow_events", raw: JSON.stringify(nodeRow("node_started", 1)) },
+      { kind: "row", ...SOURCE, snapshot_table: "remote_agent_workflow_events", raw: JSON.stringify(nodeRow("node_completed", 2)) },
+    ]);
+  }
+  if (sql.startsWith(RUN_CALLS_SQL)) {
+    return jsonLines([{
+      call_id: CALL_ID, response_id: "msg_1", engine: "archon", run_id: "run-1", node_path: "review",
+      invocation_id: "inv-1", attempt_id: "att-1", loop_path: "", outcome: "completed", started_at: "2026-11-17 10:00:02.000",
+    }]);
+  }
+  if (sql.includes("FROM agents.run_links FINAL\nWHERE engine = 'archon'\nORDER BY")) {
+    return jsonLines([{ run_id: "run-1", workflow_name: "review", status: "completed", started_at: "2026-11-17 10:00:00.000", completed_at: null }]);
+  }
+  return "";
+}
+
 /** A server-mode app whose ClickHouse holds one Archon run, and every request it makes. */
 function serverApp() {
   const directory = mkdtempSync(join(tmpdir(), "observatory-server-mode-"));
@@ -58,8 +92,7 @@ function serverApp() {
         fetch: async (_input, init) => {
           const sql = String(init?.body);
           clickHouseQueries.push(sql);
-          const runLink = { run_id: "run-1", workflow_name: "review", status: "completed", started_at: "2026-11-17 10:00:00.000", completed_at: null };
-          return new Response(sql.includes("FROM agents.run_links FINAL\nWHERE engine = 'archon'\nORDER BY") ? `${JSON.stringify(runLink)}\n` : "");
+          return new Response(clickHouseAnswer(sql));
         },
       },
     },
@@ -108,6 +141,20 @@ describe("server mode", () => {
       ],
     });
     expect(clickHouseQueries).toHaveLength(1);
+  });
+
+  test("reads one run from ClickHouse, with its call under the node attempt", async () => {
+    const { observatory } = serverApp();
+
+    const response = await call(observatory, "GET", "/api/engine-runs/archon/run-1");
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { run: { status: string }; spans: { children?: { title: string; children?: { attributes?: { key: string; value: { stringValue?: string } }[] }[] }[] }[] };
+    expect(body.run.status).toBe("completed");
+    const [attempt] = body.spans[0]!.children!;
+    expect(attempt!.title).toBe("review");
+    const callIds = attempt!.children!.map((span) => span.attributes?.find((a) => a.key === "call_id")?.value.stringValue);
+    expect(callIds).toEqual([CALL_ID]);
   });
 
   test("refuses to start with no ClickHouse password", () => {
