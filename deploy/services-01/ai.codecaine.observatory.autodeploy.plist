@@ -5,6 +5,9 @@
   A merge to main reaches https://traces.lascari.dev within about 15 minutes plus the build.
   Source of truth: github.com/Codecaine-AI/observatory (deploy/services-01/).
   Installed by hand (README, Install), not by deploy.sh, which never restarts this agent.
+  fleet-run (fleet repo, health/fleet-run) runs the job and pushes its exit code to the Gatus row
+  jobs_observatory-autodeploy. The fleet repo's envsync/install.sh installs it at /Users/services/.local/bin/fleet-run.
+  Install it before this plist.
 -->
 <plist version="1.0">
 <dict>
@@ -12,6 +15,9 @@
   <string>ai.codecaine.observatory.autodeploy</string>
   <key>ProgramArguments</key>
   <array>
+    <string>/Users/services/.local/bin/fleet-run</string>
+    <string>observatory-autodeploy</string>
+    <string>--</string>
     <string>/bin/bash</string>
     <string>/Users/services/deploy/codecaine-core/current/observatory/deploy/services-01/autodeploy.sh</string>
   </array>
