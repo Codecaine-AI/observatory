@@ -63,6 +63,12 @@ export function serverRoute(route: Route): SidebarRoute | Extract<Route, { page:
   return route;
 }
 
+/** The page that local mode shows for a route. Local mode has no Session routes, so their pages show the Action log. */
+export function localRoute(route: Route): Exclude<Route, SidebarRoute> {
+  if (route.page === "work" || route.page === "session" || route.page === "workflows") return { page: "actions" };
+  return route;
+}
+
 export function routePath(route: Route): string {
   if (route.page === "actions") return "/";
   if (route.page === "work") return "/work";

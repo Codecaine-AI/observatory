@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { isPlainLeftClick, parseRoute, routePath, serverRoute, type Route } from "../src/ui/router";
+import { isPlainLeftClick, localRoute, parseRoute, routePath, serverRoute, type Route } from "../src/ui/router";
 
 describe("the page routes", () => {
   test("read and write the Action log and Traces pages", () => {
@@ -49,6 +49,14 @@ describe("the page routes", () => {
     expect(serverRoute(parseRoute("/nowhere"))).toEqual({ page: "work" });
     expect(serverRoute(parseRoute("/workflows"))).toEqual({ page: "workflows" });
     expect(serverRoute(parseRoute("/runs/archon/c5993f42-7c8b"))).toEqual({ page: "runs", run: { engine: "archon", runId: "c5993f42-7c8b" } });
+  });
+
+  test("show the Action log in local mode for the Session pages, and keep its own pages", () => {
+    for (const path of ["/work", "/workflows", "/sessions/ses_01JZ8Q4V6X2M9R3T5W7Y1A3C5E"]) {
+      expect(localRoute(parseRoute(path))).toEqual({ page: "actions" });
+    }
+    expect(localRoute(parseRoute("/traces/canvas"))).toEqual({ page: "traces", projectId: "canvas" });
+    expect(localRoute(parseRoute("/runs"))).toEqual({ page: "runs", run: null });
   });
 
   test("send an unknown path to the Action log", () => {
