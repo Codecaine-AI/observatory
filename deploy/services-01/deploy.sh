@@ -8,7 +8,8 @@
 # 1. Takes the lock /tmp/ai.codecaine.observatory.deploy.lock. Exits 75 when another deploy holds it.
 # 2. Clones or fetches the 10 repos into the idle slot, and resets each one to origin/main.
 # 3. Links .bun-links, runs bun install --frozen-lockfile at the root and in observatory, and builds the UI.
-# 4. Starts the new slot on 127.0.0.1:18830 and checks that it answers. Stops it again.
+# 4. Starts the new slot on 127.0.0.1:18830 and checks that it answers: the engine runs, /health and
+#    /api/health with mode server, and the Session list. Stops it again.
 # 5. Points `current` at the new slot in one rename, and restarts ai.codecaine.observatory.
 # 6. Waits for a new process to answer on 127.0.0.1:8830, then names the slot in the live file.
 #    On any exit before that (an error, a failed check, a signal) it points `current` back and
@@ -302,6 +303,14 @@ check_slot() {
     fail "the new slot did not answer on 127.0.0.1:18830"
   fi
   curl -fsS --max-time 30 -o /dev/null http://127.0.0.1:18830/api/engine-runs || fail "the new slot did not list the engine runs"
+  # The UI picks its shell from the mode of /api/health, the alias of /health that the proxy forwards.
+  local path health
+  for path in /health /api/health; do
+    health="$(curl -fsS --max-time 10 "http://127.0.0.1:18830$path")" || fail "the new slot did not answer $path"
+    [[ "$health" == *'"mode":"server"'* ]] || fail "the new slot's $path does not report mode server: ${health:0:200}"
+  done
+  # The Session reader: one ClickHouse read of the Session list.
+  curl -fsS --max-time 60 -o /dev/null http://127.0.0.1:18830/api/sessions || fail "the new slot did not list the Sessions"
   kill "$check_pid" 2>/dev/null || true
   wait "$check_pid" 2>/dev/null || true
   check_pid=""
