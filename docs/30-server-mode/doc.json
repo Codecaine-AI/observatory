@@ -20,12 +20,22 @@
         "sm-set",
         "sm-set-exit",
         "sm-set-env",
+        "sm-set-check",
         "sm-set-deploy",
         "sm-h-keep",
         "sm-keep-lead",
         "sm-keep",
         "sm-keep-reader",
-        "sm-keep-diff"
+        "sm-keep-diff",
+        "sm-h-queue",
+        "sm-queue-lead",
+        "sm-queue-1",
+        "sm-queue-2",
+        "sm-h-ui",
+        "sm-ui-lead",
+        "sm-ui-retry",
+        "sm-ui-pages",
+        "sm-ui-shell"
       ]
     },
     "sm-intro": {
@@ -43,7 +53,7 @@
           }
         },
         {
-          "insert": ", the API mounts no route that writes, runs a command, or reaches a registry project, and it reads the engine runs from the trace ClickHouse. The UI is the same in both modes. This page gives what server mode turns off, the settings of the services-01 LaunchAgent, and what stays on."
+          "insert": ", the API mounts no route that writes, runs a command, or reaches a registry project. It reads the engine runs and the Session trees from the trace ClickHouse, and the UI shows a Work and Workflows sidebar. This page gives what server mode turns off, the settings of the services-01 LaunchAgent, what stays on, and the server mode UI."
         }
       ],
       "children": []
@@ -501,7 +511,16 @@
       },
       "text": [
         {
-          "insert": "The UI keeps its 3 pages in "
+          "insert": "Server mode shows no Action log page and no Traces page. "
+        },
+        {
+          "insert": "serverRoute",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
         },
         {
           "insert": "src/ui/router.ts",
@@ -509,12 +528,31 @@
             "code": true,
             "reference": {
               "kind": "source",
-              "path": "src/ui/router.ts"
+              "path": "src/ui/router.ts",
+              "symbol": "serverRoute"
             }
           }
         },
         {
-          "insert": ". The Traces page and the Action log page show no data in server mode, because their routes are not mounted."
+          "insert": " sends "
+        },
+        {
+          "insert": "/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "/traces",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and an unknown path to the Work tab."
         }
       ],
       "children": []
@@ -895,6 +933,72 @@
       ],
       "children": []
     },
+    "sm-set-check": {
+      "id": "sm-set-check",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "check_slot",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "deploy/services-01/deploy.sh",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "deploy/services-01/deploy.sh"
+            }
+          }
+        },
+        {
+          "insert": " starts the new slot on 127.0.0.1:18830 before the swap. The slot must list the engine runs, report mode "
+        },
+        {
+          "insert": "server",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on "
+        },
+        {
+          "insert": "/health",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "/api/health",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and answer "
+        },
+        {
+          "insert": "GET /api/sessions",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". A failed check stops the deploy, and the live slot keeps serving."
+        }
+      ],
+      "children": []
+    },
     "sm-set-deploy": {
       "id": "sm-set-deploy",
       "type": "paragraph",
@@ -938,7 +1042,7 @@
       "props": {},
       "text": [
         {
-          "insert": "Server mode keeps 4 route groups, and none of them writes. The engine run routes and the home's kernel routes keep the JSON shape that the Runs page reads in local mode."
+          "insert": "Server mode serves 5 route groups, and none of them writes. The engine run routes and the home's kernel routes keep the JSON shape that the Runs page reads in local mode."
         }
       ],
       "children": []
@@ -959,14 +1063,32 @@
                 "attributes": {
                   "code": true
                 }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "GET /api/health",
+                "attributes": {
+                  "code": true
+                }
               }
             ],
             [
               {
-                "insert": "Nothing. It returns "
+                "insert": "Nothing. Both return "
               },
               {
-                "insert": "{\"status\":\"ok\",\"projects\":0}",
+                "insert": "{\"status\":\"ok\",\"mode\":\"server\",\"projects\":0}",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", and the UI picks its shell from "
+              },
+              {
+                "insert": "mode",
                 "attributes": {
                   "code": true
                 }
@@ -1077,6 +1199,114 @@
                 "insert": " opens it read-only on first use, and the routes return no data while the file is missing."
               }
             ]
+          ],
+          [
+            [
+              {
+                "insert": "GET /api/sessions",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and the 6 other Session routes"
+              }
+            ],
+            [
+              {
+                "insert": "The Session reader of the trace-viewer read service, "
+              },
+              {
+                "insert": "createSessionReader",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". It reads the link tables of the ClickHouse database "
+              },
+              {
+                "insert": "agents",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " with the same "
+              },
+              {
+                "insert": "traces_ro",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " user. The routes are "
+              },
+              {
+                "insert": "/api/sessions",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "/api/sessions/:sessionId/tree",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "/api/node-calls",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "/api/calls/:callId",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "/api/orphans",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "/api/status",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "/api/workflows",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
           ]
         ],
         "title": "Routes that server mode serves"
@@ -1109,7 +1339,7 @@
           }
         },
         {
-          "insert": " picks the reader by mode. Local mode uses "
+          "insert": " picks the reader by mode. In server mode it also builds the Session reader from the gateway settings, and local mode mounts no Session route. Local mode uses "
         },
         {
           "insert": "createArchonHomeReader",
@@ -1127,7 +1357,7 @@
           }
         },
         {
-          "insert": ". The ClickHouse reader of the trace-viewer read service differs from it in 3 ways that a reader can see."
+          "insert": ". The ClickHouse reader of the trace-viewer read service differs from it in 4 ways that a reader can see."
         }
       ],
       "children": []
@@ -1170,6 +1400,373 @@
         ],
         "title": "How the ClickHouse reader differs from the archon.db reader"
       },
+      "children": []
+    },
+    "sm-h-queue": {
+      "id": "sm-h-queue",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "The ClickHouse Query Queue"
+        }
+      ],
+      "children": []
+    },
+    "sm-queue-lead": {
+      "id": "sm-queue-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The "
+        },
+        {
+          "insert": "traces_ro",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " user can run 2 ClickHouse queries at a time, and the Work tab alone reads 5 at once. "
+        },
+        {
+          "insert": "limitConcurrency",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "src/server/query-limit.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "src/server/query-limit.ts",
+              "symbol": "limitConcurrency"
+            }
+          }
+        },
+        {
+          "insert": " wraps the fetch of the gateway settings in both modes, so every reader of the process shares one queue."
+        }
+      ],
+      "children": []
+    },
+    "sm-queue-1": {
+      "id": "sm-queue-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "At most "
+        },
+        {
+          "insert": "MAX_CLICKHOUSE_QUERIES",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", 2, queries run at a time, in the order they came. A query keeps its slot until its answer body is read, and a waiting query takes the slot of the query that ends."
+        }
+      ],
+      "children": []
+    },
+    "sm-queue-2": {
+      "id": "sm-queue-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "A waiting query whose request is aborted leaves the queue and rejects with the reason of its signal. The read service still retries an error 202 that another client causes."
+        }
+      ],
+      "children": []
+    },
+    "sm-h-ui": {
+      "id": "sm-h-ui",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "The Server Mode UI"
+        }
+      ],
+      "children": []
+    },
+    "sm-ui-lead": {
+      "id": "sm-ui-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "App",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "src/ui/App.tsx",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "src/ui/App.tsx"
+            }
+          }
+        },
+        {
+          "insert": " reads the mode from "
+        },
+        {
+          "insert": "GET /api/health",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and picks the shell. It reads "
+        },
+        {
+          "insert": "/api/health",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and not "
+        },
+        {
+          "insert": "/health",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", because the services-01 proxy sends only "
+        },
+        {
+          "insert": "/api/*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "/registry/*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " to the API. No shell renders until the mode is known."
+        }
+      ],
+      "children": []
+    },
+    "sm-ui-retry": {
+      "id": "sm-ui-retry",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A failed mode read, such as a 502 while a deploy restarts the API, shows that the API did not answer. The page reads the mode again after 3 s, or at once on "
+        },
+        {
+          "insert": "Retry",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "sm-ui-pages": {
+      "id": "sm-ui-pages",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Path",
+          "Server Mode",
+          "Local Mode"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "/traces/:projectId",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and an unknown path"
+              }
+            ],
+            "The Work tab",
+            [
+              {
+                "insert": "The Action log, or the Traces page for "
+              },
+              {
+                "insert": "/traces",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "/work",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The Work tab: the Session list, then the nodes with no parent",
+            "The Action log"
+          ],
+          [
+            [
+              {
+                "insert": "/sessions/:sessionId",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "One Session: the tree on the left, the node detail on the right",
+            "The Action log"
+          ],
+          [
+            [
+              {
+                "insert": "/workflows",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The Workflows tab: the workflow runs by workflow and machine",
+            "The Action log"
+          ],
+          [
+            [
+              {
+                "insert": "/runs/:engine/:runId",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The Runs page under a topbar with a "
+              },
+              {
+                "insert": "Workflows",
+                "attributes": {
+                  "bold": true
+                }
+              },
+              {
+                "insert": " link back"
+              }
+            ],
+            "The Runs page"
+          ]
+        ],
+        "title": "Pages in each mode"
+      },
+      "children": []
+    },
+    "sm-ui-shell": {
+      "id": "sm-ui-shell",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "ServerApp",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "src/ui/ServerApp.tsx",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "src/ui/ServerApp.tsx",
+              "symbol": "ServerApp"
+            }
+          }
+        },
+        {
+          "insert": " renders "
+        },
+        {
+          "insert": "SidebarShell",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " of viewer-shell with the API prefix "
+        },
+        {
+          "insert": "/api",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The Viewer Packages page of the trace-viewer docs describes the parts of each page. A click on a run in the Workflows tab opens "
+        },
+        {
+          "insert": "/runs/:engine/:runId",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
       "children": []
     }
   }
