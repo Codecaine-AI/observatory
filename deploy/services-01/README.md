@@ -43,6 +43,8 @@ The script exits 75 when another deploy holds `/tmp/ai.codecaine.observatory.dep
 2. Copy `ai.codecaine.observatory.autodeploy.plist` to `/Users/services/Library/LaunchAgents/`, mode 644, owner services.
 3. Load it in the services user's GUI session: `sudo launchctl bootstrap gui/503 /Users/services/Library/LaunchAgents/ai.codecaine.observatory.autodeploy.plist`.
 
+The poll LaunchAgent runs `autodeploy.sh` under `fleet-run` from the fleet repo, at `/Users/services/.local/bin/fleet-run`. The fleet repo's `envsync/install.sh` installs it, so install it before step 2. After each run, `fleet-run` pushes the exit code to the Gatus row `jobs_observatory-autodeploy`, and a failed run posts to Slack.
+
 ## Clear a Stale Lock
 
 A deploy killed with SIGKILL leaves `/tmp/ai.codecaine.observatory.deploy.lock`. Every later deploy then exits 75, and `autodeploy.log` reports the lock after an hour. Make sure no `deploy.sh` runs, then remove it:
