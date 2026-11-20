@@ -550,3 +550,41 @@ describe("local read-only trace routes", () => {
     expect(calls).toEqual([]);
   });
 });
+
+describe("local mode", () => {
+  test.each([["/health"], ["/api/health"]])("reports its mode and project count on %s", async (path) => {
+    const { app } = buildApp(project(), async () => Response.json({ status: "ok" }));
+
+    const response = await app.handle(new Request(`http://observatory${path}`));
+
+    expect(await response.json()).toEqual({ status: "ok", mode: "local", projects: 1 });
+  });
+
+  test("mounts no Session route, though a gateway is set", async () => {
+    const clickHouseRequests: string[] = [];
+    const entry = project();
+    const observatory = createObservatoryApp(registry(entry), {
+      fetch: async () => Response.json({ status: "ok" }),
+      startLiveness: false,
+      autoLaunch: false,
+      engineRuns: {
+        archonHome: entry.kernelRoot,
+        gateway: {
+          url: "https://clickhouse.test/",
+          user: "reader",
+          password: "test-only",
+          fetch: async (input) => {
+            clickHouseRequests.push(String(input));
+            return new Response("");
+          },
+        },
+      },
+    });
+    openApps.push(observatory);
+
+    for (const path of ["/api/sessions", "/api/orphans", "/api/status", "/api/workflows"]) {
+      expect((await observatory.app.handle(new Request(`http://observatory${path}`))).status).toBe(404);
+    }
+    expect(clickHouseRequests).toEqual([]);
+  });
+});

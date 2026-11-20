@@ -15,6 +15,8 @@ import {
   createArchonHomeReader,
   createClickHouseReader,
   createEngineRunRoutes,
+  createSessionReader,
+  createSessionRoutes,
   type GatewayAdapterOptions,
 } from "@codecaine-ai/agent-kernel-viewer-read-service";
 
@@ -33,9 +35,20 @@ import {
  *
  * In local mode the runs come from the home's archon.db. In server mode they
  * come from the trace ClickHouse, and the home gives only the kernel spans.
+ *
+ * Server mode also serves the 7 Session routes of the read service, read from
+ * the same ClickHouse with the same read-only user:
+ *
+ *   GET /api/sessions                  the Session list, last active first
+ *   GET /api/sessions/:sessionId/tree  one Session as a tree
+ *   GET /api/node-calls?kind=&id=      the calls of one node, 100 for each page
+ *   GET /api/calls/:callId             the content of one call
+ *   GET /api/orphans                   the nodes with no parent
+ *   GET /api/status                    the age of each source
+ *   GET /api/workflows                 the workflow runs by workflow
  */
 
-/** The prefix the viewer appends `/engine-runs/...` to. */
+/** The prefix the viewer appends `/engine-runs/...` to. The Session routes share it. */
 export const ENGINE_RUNS_API_PREFIX = "/api";
 /** The prefix the viewer appends kernel paths such as `/kernel/blobs/:hash` to. */
 export const ARCHON_HOME_KERNEL_PREFIX = "/api/archon-home";
@@ -117,7 +130,8 @@ export class ArchonKernelDatabase {
 }
 
 /**
- * The engine run routes and the home's kernel trace routes, as Elysia plugins.
+ * The engine run routes and the home's kernel trace routes, as Elysia plugins,
+ * and in server mode the Session routes. `sessions` is null in local mode.
  * Server mode throws without a gateway, because its runs come from ClickHouse.
  */
 export function createEngineRunPlugins(
@@ -126,9 +140,11 @@ export function createEngineRunPlugins(
   mode: ObservatoryMode = "local",
 ) {
   let reader;
+  let sessions = null;
   if (mode === "server") {
     if (!settings.gateway) throw new Error("Server mode needs TRACES_SQL_PASSWORD: its runs come from ClickHouse");
     reader = createClickHouseReader(settings.gateway, { kernelDbPath: kernelDatabase.dbPath });
+    sessions = createSessionRoutes(createSessionReader(settings.gateway), { prefix: ENGINE_RUNS_API_PREFIX });
   } else {
     reader = createArchonHomeReader(
       settings.archonHome,
@@ -160,5 +176,6 @@ export function createEngineRunPlugins(
   return {
     engineRuns: createEngineRunRoutes(reader, { prefix: ENGINE_RUNS_API_PREFIX }),
     kernelApi,
+    sessions,
   };
 }
