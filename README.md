@@ -64,6 +64,20 @@ first, so the page says when it hit that cap. Filter to narrow it.
 - `GET /api/archon-home/kernel/...` serves the kernel trace routes (blobs, turn
   contexts) on the Archon home's kernel trace.db, for the kernel spans of a
   run's kernel nodes.
+- `GET /health` and its alias `GET /api/health` return
+  `{ status, mode, projects }`. `mode` is `local` or `server`, and the UI picks
+  its shell from it.
+- Server mode only (`OBSERVATORY_MODE=server`): the 7 Session routes of the
+  trace-viewer read service, read from the trace ClickHouse. They are
+  `GET /api/sessions`, `GET /api/sessions/:sessionId/tree`,
+  `GET /api/node-calls?kind=&id=&page=`, `GET /api/calls/:callId`,
+  `GET /api/orphans`, `GET /api/status` and `GET /api/workflows`.
+  `deploy/services-01/README.md` lists what each one answers.
+
+In server mode the UI shows a left sidebar with Work (`/work`, a Session at
+`/sessions/:sessionId`) and Workflows (`/workflows`). A run opens the Runs page
+at `/runs/:engine/:runId`. Local mode keeps the project sidebar and the 3
+pages above.
 
 ## Engine run settings
 
