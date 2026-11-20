@@ -95,6 +95,27 @@ describe("the ClickHouse query queue", () => {
     expect(started).toEqual(["first", "second", "last"]);
   });
 
+  test("takes the signal of a Request input unless the init sets a signal, even null", async () => {
+    const finish: (() => void)[] = [];
+    const limited = limitConcurrency(async () => {
+      const body = new Promise<ArrayBuffer>((resolve) => finish.push(() => resolve(new ArrayBuffer(0))));
+      return { status: 200, statusText: "OK", headers: new Headers(), arrayBuffer: () => body } as unknown as Response;
+    }, 1);
+    const cancelled = new AbortController();
+    cancelled.abort(new Error("cancelled"));
+    const request = new Request("http://clickhouse.test/", { signal: cancelled.signal });
+
+    const first = limited("first");
+    await expect(limited(request)).rejects.toThrow("cancelled");
+    const overridden = limited(request, { signal: null });
+    await Bun.sleep(1);
+    finish.shift()!();
+    await first;
+    await Bun.sleep(1);
+    finish.shift()!();
+    expect((await overridden).status).toBe(200);
+  });
+
   test("frees the slot of a query that fails", async () => {
     const limited = limitConcurrency(async (input) => {
       if (String(input) === "bad") throw new Error("network down");

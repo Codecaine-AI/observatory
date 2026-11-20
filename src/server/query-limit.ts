@@ -37,7 +37,9 @@ export function limitConcurrency(fetchImpl: Fetch, max: number): Fetch {
     });
   return async (input, init) => {
     // A waiter gets the slot of the request that ends, so no new caller can take it in between.
-    if (active >= max) await waitForSlot(init?.signal ?? (input instanceof Request ? input.signal : undefined));
+    // As in fetch, an init signal, even null, overrides the signal of a Request input.
+    const signal = init?.signal !== undefined ? init.signal : input instanceof Request ? input.signal : null;
+    if (active >= max) await waitForSlot(signal ?? undefined);
     else active++;
     try {
       const response = await fetchImpl(input, init);
