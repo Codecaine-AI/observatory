@@ -7,9 +7,11 @@ import {
 } from "react";
 
 import {
+  fetchObservatoryMode,
   fetchRegistryProjects,
   launchRegistryProject,
   stopRegistryProject,
+  type ObservatoryMode,
   type RegistryProject,
 } from "./api";
 import {
@@ -20,23 +22,73 @@ import {
 import { ActionsPage } from "./pages/ActionsPage";
 import { RunsPage } from "./pages/RunsPage";
 import { TracesPage } from "./pages/TracesPage";
-import { isPlainLeftClick, routePath, useRoute, type Route } from "./router";
+import { isPlainLeftClick, localRoute, routePath, useRoute, type Route } from "./router";
+import { ServerApp } from "./ServerApp";
 import { resolveTracesProject } from "./tracesProject";
-
-type Theme = "light" | "dark";
-
-const THEME_STORAGE_KEY = "observatory.theme";
-
-function loadTheme(): Theme {
-  return window.localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark";
-}
+import { useTheme, type Theme } from "./useTheme";
 
 type ProjectState =
   | { status: "loading"; projects: RegistryProject[] }
   | { status: "ready"; projects: RegistryProject[] }
   | { status: "error"; projects: RegistryProject[]; message: string };
 
+/** The wait before the next read of the mode after a failed read, such as a 502 while a deploy restarts the API. */
+const MODE_RETRY_MS = 3000;
+
+const retryButtonClass =
+  "flex h-(--ds-control-height-lg) items-center rounded-[2px] border border-border bg-card px-3 font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground";
+
+/**
+ * Picks the shell from the API mode. Server mode shows the sidebar shell of
+ * viewer-shell: Work and Workflows. Local mode shows ProjectSidebar and its
+ * home page, the Action log. A failed mode read picks no shell: it reads the
+ * mode again after MODE_RETRY_MS, or at once on Retry.
+ */
 export function App() {
+  const [mode, setMode] = useState<ObservatoryMode | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [theme, toggleTheme] = useTheme();
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    void fetchObservatoryMode(controller.signal)
+      .then((read) => {
+        setFailed(false);
+        setMode(read);
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setFailed(true);
+        retry = setTimeout(() => setAttempt((n) => n + 1), MODE_RETRY_MS);
+      });
+    return () => {
+      controller.abort();
+      clearTimeout(retry);
+    };
+  }, [attempt]);
+
+  // Until the mode is known, no shell renders, so neither one starts its reads.
+  if (mode === null) {
+    if (!failed) return <div className="h-full bg-background" aria-busy="true" />;
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 bg-background font-mono text-(length:--ds-font-size-ui-xs) text-muted-foreground">
+        <p role="alert">The Observatory API did not answer. Trying again.</p>
+        <button type="button" className={retryButtonClass} onClick={() => setAttempt((n) => n + 1)}>
+          Retry
+        </button>
+      </div>
+    );
+  }
+  return mode === "server" ? (
+    <ServerApp theme={theme} onToggleTheme={toggleTheme} />
+  ) : (
+    <LocalApp theme={theme} onToggleTheme={toggleTheme} />
+  );
+}
+
+function LocalApp({ theme, onToggleTheme }: { theme: Theme; onToggleTheme: () => void }) {
   const [projectState, setProjectState] = useState<ProjectState>({
     status: "loading",
     projects: [],
@@ -44,8 +96,8 @@ export function App() {
   const [projectActions, setProjectActions] = useState<
     Record<string, ProjectActionState | undefined>
   >({});
-  const [theme, setTheme] = useState<Theme>(loadTheme);
-  const [route, navigate] = useRoute();
+  const [anyRoute, navigate] = useRoute();
+  const route = localRoute(anyRoute);
 
   const refreshProjects = useCallback(async (quiet = false) => {
     if (!quiet) {
@@ -89,12 +141,6 @@ export function App() {
     return () => window.clearInterval(interval);
   }, [hasStartingProject, refreshProjects]);
 
-  useEffect(() => {
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.style.colorScheme = theme;
-  }, [theme]);
-
   const tracesProject = useMemo(
     () =>
       route.page === "traces"
@@ -108,10 +154,6 @@ export function App() {
   );
   const activeProject =
     tracesProject?.kind === "project" ? tracesProject.project : null;
-
-  const toggleTheme = useCallback(() => {
-    setTheme((current) => (current === "dark" ? "light" : "dark"));
-  }, []);
 
   const runProjectAction = useCallback(
     async (projectId: string, kind: "start" | "stop") => {
@@ -161,7 +203,7 @@ export function App() {
         onStop={(projectId) => void runProjectAction(projectId, "stop")}
         actions={projectActions}
         theme={theme}
-        onToggleTheme={toggleTheme}
+        onToggleTheme={onToggleTheme}
         onRefresh={() => void refreshProjects()}
         refreshing={projectState.status === "loading"}
       />

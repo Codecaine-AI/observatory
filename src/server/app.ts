@@ -39,8 +39,8 @@ export interface CreateObservatoryAppOptions {
   engineRuns?: EngineRunSettings;
   /**
    * `server` serves only /health, the engine run routes, the home's kernel
-   * routes, and an empty project list. It ignores the registry, and starts no
-   * liveness poll and no launch. Default `local`.
+   * routes, the Session routes, and an empty project list. It ignores the
+   * registry, and starts no liveness poll and no launch. Default `local`.
    */
   mode?: ObservatoryMode;
 }
@@ -104,7 +104,8 @@ export function createObservatoryApp(
   registry: LoadedRegistry,
   options: CreateObservatoryAppOptions = {},
 ): ObservatoryApp {
-  const server = (options.mode ?? "local") === "server";
+  const mode = options.mode ?? "local";
+  const server = mode === "server";
   // Server mode never reads a project, so no route, probe or launch can reach one.
   if (server) registry = { ...registry, projects: [] };
   const fetchImpl = options.fetch ?? globalThis.fetch;
@@ -118,23 +119,24 @@ export function createObservatoryApp(
     registry.projects.map((project) => [project.id, project]),
   );
 
-  let app = new Elysia().get("/health", () => ({
-    status: "ok",
-    projects: registry.projects.length,
-  }));
+  // The UI picks its shell from `mode`: the sidebar shell in server mode, ProjectSidebar in local mode.
+  // It reads /api/health, because the services-01 proxy sends only /api/* and /registry/* to the API.
+  const health = () => ({ status: "ok", mode, projects: registry.projects.length });
+  let app = new Elysia().get("/health", health).get("/api/health", health);
 
   const archonKernel = options.engineRuns
     ? new ArchonKernelDatabase(options.engineRuns.archonHome)
     : null;
   if (options.engineRuns && archonKernel) {
-    const { engineRuns, kernelApi } = createEngineRunPlugins(
+    const { engineRuns, kernelApi, sessions } = createEngineRunPlugins(
       options.engineRuns,
       archonKernel,
-      options.mode,
+      mode,
     );
     app = app
       .use(engineRuns as unknown as Elysia)
       .use(kernelApi as unknown as Elysia);
+    if (sessions) app = app.use(sessions as unknown as Elysia);
   }
 
   if (server) {

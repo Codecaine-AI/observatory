@@ -126,6 +126,19 @@ export async function fetchTraceSessionDetail(
   );
 }
 
+/** The mode of the API: `local` (one machine, with the registry) or `server` (a shared read-only host). */
+export type ObservatoryMode = "local" | "server";
+
+/**
+ * The mode from GET /api/health. The UI reads the /api alias of /health,
+ * because the services-01 proxy sends only /api/* and /registry/* to the API.
+ * An answer with no known mode, such as an older API, counts as local.
+ */
+export async function fetchObservatoryMode(signal?: AbortSignal): Promise<ObservatoryMode> {
+  const body = await requestJson<{ mode?: unknown }>("/api/health", signal);
+  return body.mode === "server" ? "server" : "local";
+}
+
 /** The prefix the viewer appends `/engine-runs/...` to (gateway call content). */
 export const ENGINE_RUNS_API_PREFIX = "/api";
 

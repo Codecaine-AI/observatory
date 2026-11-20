@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { isPlainLeftClick, parseRoute, routePath, type Route } from "../src/ui/router";
+import { isPlainLeftClick, localRoute, parseRoute, routePath, serverRoute, type Route } from "../src/ui/router";
 
 describe("the page routes", () => {
   test("read and write the Action log and Traces pages", () => {
@@ -26,6 +26,37 @@ describe("the page routes", () => {
       expect(parseRoute(path)).toEqual(route);
       expect(routePath(route)).toBe(path);
     }
+  });
+
+  test("read and write the Work, Session and Workflows pages", () => {
+    const routes: [string, Route][] = [
+      ["/work", { page: "work" }],
+      ["/sessions/ses_01JZ8Q4V6X2M9R3T5W7Y1A3C5E", { page: "session", sessionId: "ses_01JZ8Q4V6X2M9R3T5W7Y1A3C5E" }],
+      ["/sessions/a%2Fb", { page: "session", sessionId: "a/b" }],
+      ["/workflows", { page: "workflows" }],
+    ];
+    for (const [path, route] of routes) {
+      expect(parseRoute(path)).toEqual(route);
+      expect(routePath(route)).toBe(path);
+    }
+    expect(parseRoute("/work/")).toEqual({ page: "work" });
+    expect(parseRoute("/sessions")).toEqual({ page: "actions" });
+  });
+
+  test("show the Work tab in server mode for the pages it does not have, and keep the run page", () => {
+    expect(serverRoute(parseRoute("/"))).toEqual({ page: "work" });
+    expect(serverRoute(parseRoute("/traces/canvas"))).toEqual({ page: "work" });
+    expect(serverRoute(parseRoute("/nowhere"))).toEqual({ page: "work" });
+    expect(serverRoute(parseRoute("/workflows"))).toEqual({ page: "workflows" });
+    expect(serverRoute(parseRoute("/runs/archon/c5993f42-7c8b"))).toEqual({ page: "runs", run: { engine: "archon", runId: "c5993f42-7c8b" } });
+  });
+
+  test("show the Action log in local mode for the Session pages, and keep its own pages", () => {
+    for (const path of ["/work", "/workflows", "/sessions/ses_01JZ8Q4V6X2M9R3T5W7Y1A3C5E"]) {
+      expect(localRoute(parseRoute(path))).toEqual({ page: "actions" });
+    }
+    expect(localRoute(parseRoute("/traces/canvas"))).toEqual({ page: "traces", projectId: "canvas" });
+    expect(localRoute(parseRoute("/runs"))).toEqual({ page: "runs", run: null });
   });
 
   test("send an unknown path to the Action log", () => {

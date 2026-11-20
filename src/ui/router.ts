@@ -1,15 +1,27 @@
 import { useCallback, useEffect, useState } from "react";
+import type { SidebarRoute } from "@codecaine-ai/agent-kernel-viewer-shell";
 
 /**
- * The 3 Observatory pages. `/` is the Action log, `/traces/:projectId` the
- * kernel Traces page, `/runs/:engine/:runId` the engine Runs page.
+ * The Observatory pages.
+ *
+ *   /                       the Action log (local mode), the Work tab (server mode)
+ *   /traces/:projectId      the kernel Traces page (local mode)
+ *   /runs/:engine/:runId    the engine Runs page (both modes)
+ *   /work                   the Work tab: the Sessions and the nodes with no parent
+ *   /sessions/:sessionId    one Session as a tree
+ *   /workflows              the Workflows tab: the workflow runs by workflow
  */
 export type Route =
   | { page: "actions" }
   | { page: "traces"; projectId: string | null }
-  | { page: "runs"; run: { engine: string; runId: string } | null };
+  | { page: "runs"; run: { engine: string; runId: string } | null }
+  | SidebarRoute;
 
 export function parseRoute(pathname: string): Route {
+  if (/^\/work\/?$/.test(pathname)) return { page: "work" };
+  if (/^\/workflows\/?$/.test(pathname)) return { page: "workflows" };
+  const session = /^\/sessions\/([^/]+)\/?$/.exec(pathname);
+  if (session?.[1]) return { page: "session", sessionId: decodeSegment(session[1]) };
   const runs = /^\/runs(?:\/([^/]+)\/([^/]+))?\/?$/.exec(pathname);
   if (runs) {
     return {
@@ -42,8 +54,26 @@ function decodeSegment(segment: string): string {
   }
 }
 
+/**
+ * The page that server mode shows for a route. Server mode has no Action log
+ * and no Traces page, so `/`, `/traces` and an unknown path show the Work tab.
+ */
+export function serverRoute(route: Route): SidebarRoute | Extract<Route, { page: "runs" }> {
+  if (route.page === "actions" || route.page === "traces") return { page: "work" };
+  return route;
+}
+
+/** The page that local mode shows for a route. Local mode has no Session routes, so their pages show the Action log. */
+export function localRoute(route: Route): Exclude<Route, SidebarRoute> {
+  if (route.page === "work" || route.page === "session" || route.page === "workflows") return { page: "actions" };
+  return route;
+}
+
 export function routePath(route: Route): string {
   if (route.page === "actions") return "/";
+  if (route.page === "work") return "/work";
+  if (route.page === "workflows") return "/workflows";
+  if (route.page === "session") return `/sessions/${encodeURIComponent(route.sessionId)}`;
   if (route.page === "runs") {
     return route.run
       ? `/runs/${encodeURIComponent(route.run.engine)}/${encodeURIComponent(route.run.runId)}`
