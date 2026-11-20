@@ -20,15 +20,17 @@ export function limitConcurrency(fetchImpl: Fetch, max: number): Fetch {
   let active = 0;
   const waiting: (() => void)[] = [];
   return async (input, init) => {
+    // A waiter gets the slot of the request that ends, so no new caller can take it in between.
     if (active >= max) await new Promise<void>((resolve) => waiting.push(resolve));
-    active++;
+    else active++;
     try {
       const response = await fetchImpl(input, init);
       const body = await response.arrayBuffer();
       return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
     } finally {
-      active--;
-      waiting.shift()?.();
+      const next = waiting.shift();
+      if (next) next();
+      else active--;
     }
   };
 }

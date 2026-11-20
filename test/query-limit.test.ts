@@ -34,6 +34,41 @@ describe("the ClickHouse query queue", () => {
     expect(most).toBe(2);
   });
 
+  test("gives a freed slot to the waiting query, not to a query that arrives at the same moment", async () => {
+    let running = 0;
+    let most = 0;
+    const finish = new Map<string, () => void>();
+    const limited = limitConcurrency(async (input) => {
+      running++;
+      most = Math.max(most, running);
+      const body = new Promise<ArrayBuffer>((resolve) =>
+        finish.set(String(input), () => {
+          running--;
+          resolve(new ArrayBuffer(0));
+        }),
+      );
+      return { status: 200, statusText: "OK", headers: new Headers(), arrayBuffer: () => body } as unknown as Response;
+    }, 1);
+
+    const first = limited("first");
+    const waiting = limited("waiting");
+    await Bun.sleep(1);
+    // The new query arrives after the first query ends and before the waiting query wakes.
+    finish.get("first")!();
+    let late: Promise<Response> | undefined;
+    queueMicrotask(() => (late = limited("late")));
+    await first;
+    await Bun.sleep(1);
+
+    expect([...finish.keys()]).toEqual(["first", "waiting"]);
+    finish.get("waiting")!();
+    await waiting;
+    await Bun.sleep(1);
+    finish.get("late")!();
+    await late;
+    expect(most).toBe(1);
+  });
+
   test("frees the slot of a query that fails", async () => {
     const limited = limitConcurrency(async (input) => {
       if (String(input) === "bad") throw new Error("network down");
