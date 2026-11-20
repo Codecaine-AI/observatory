@@ -32,27 +32,55 @@ type ProjectState =
   | { status: "ready"; projects: RegistryProject[] }
   | { status: "error"; projects: RegistryProject[]; message: string };
 
+/** The wait before the next read of the mode after a failed read, such as a 502 while a deploy restarts the API. */
+const MODE_RETRY_MS = 3000;
+
+const retryButtonClass =
+  "flex h-(--ds-control-height-lg) items-center rounded-[2px] border border-border bg-card px-3 font-mono text-(length:--ds-font-size-ui-2xs) font-bold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground";
+
 /**
  * Picks the shell from the API mode. Server mode shows the sidebar shell of
  * viewer-shell: Work and Workflows. Local mode shows ProjectSidebar and its
- * home page, the Action log. A failed mode read keeps the local shell.
+ * home page, the Action log. A failed mode read picks no shell: it reads the
+ * mode again after MODE_RETRY_MS, or at once on Retry.
  */
 export function App() {
   const [mode, setMode] = useState<ObservatoryMode | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [theme, toggleTheme] = useTheme();
 
   useEffect(() => {
     const controller = new AbortController();
+    let retry: ReturnType<typeof setTimeout> | undefined;
     void fetchObservatoryMode(controller.signal)
-      .then(setMode)
+      .then((read) => {
+        setFailed(false);
+        setMode(read);
+      })
       .catch(() => {
-        if (!controller.signal.aborted) setMode("local");
+        if (controller.signal.aborted) return;
+        setFailed(true);
+        retry = setTimeout(() => setAttempt((n) => n + 1), MODE_RETRY_MS);
       });
-    return () => controller.abort();
-  }, []);
+    return () => {
+      controller.abort();
+      clearTimeout(retry);
+    };
+  }, [attempt]);
 
   // Until the mode is known, no shell renders, so neither one starts its reads.
-  if (mode === null) return <div className="h-full bg-background" aria-busy="true" />;
+  if (mode === null) {
+    if (!failed) return <div className="h-full bg-background" aria-busy="true" />;
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 bg-background font-mono text-(length:--ds-font-size-ui-xs) text-muted-foreground">
+        <p role="alert">The Observatory API did not answer. Trying again.</p>
+        <button type="button" className={retryButtonClass} onClick={() => setAttempt((n) => n + 1)}>
+          Retry
+        </button>
+      </div>
+    );
+  }
   return mode === "server" ? (
     <ServerApp theme={theme} onToggleTheme={toggleTheme} />
   ) : (

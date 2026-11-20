@@ -19,9 +19,25 @@ export const MAX_CLICKHOUSE_QUERIES = 2;
 export function limitConcurrency(fetchImpl: Fetch, max: number): Fetch {
   let active = 0;
   const waiting: (() => void)[] = [];
+  // Resolves when a request that ends hands its slot over. An aborted request leaves the queue
+  // and rejects with the reason of its signal. It holds no slot, so it frees none.
+  const waitForSlot = (signal: AbortSignal | undefined) =>
+    new Promise<void>((resolve, reject) => {
+      if (signal?.aborted) return reject(signal.reason);
+      const onAbort = () => {
+        waiting.splice(waiting.indexOf(wake), 1);
+        reject(signal!.reason);
+      };
+      const wake = () => {
+        signal?.removeEventListener("abort", onAbort);
+        resolve();
+      };
+      waiting.push(wake);
+      signal?.addEventListener("abort", onAbort, { once: true });
+    });
   return async (input, init) => {
     // A waiter gets the slot of the request that ends, so no new caller can take it in between.
-    if (active >= max) await new Promise<void>((resolve) => waiting.push(resolve));
+    if (active >= max) await waitForSlot(init?.signal ?? (input instanceof Request ? input.signal : undefined));
     else active++;
     try {
       const response = await fetchImpl(input, init);

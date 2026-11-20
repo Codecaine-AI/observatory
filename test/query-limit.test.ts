@@ -69,6 +69,32 @@ describe("the ClickHouse query queue", () => {
     expect(most).toBe(1);
   });
 
+  test("drops an aborted waiting query from the queue, and runs the others in order", async () => {
+    const started: string[] = [];
+    const finish = new Map<string, () => void>();
+    const limited = limitConcurrency(async (input) => {
+      started.push(String(input));
+      const body = new Promise<ArrayBuffer>((resolve) => finish.set(String(input), () => resolve(new ArrayBuffer(0))));
+      return { status: 200, statusText: "OK", headers: new Headers(), arrayBuffer: () => body } as unknown as Response;
+    }, 1);
+
+    const cancel = new AbortController();
+    const first = limited("first");
+    const second = limited("second");
+    const aborted = limited("aborted", { signal: cancel.signal });
+    const last = limited("last");
+    await Bun.sleep(1);
+    cancel.abort(new Error("the page closed"));
+    await expect(aborted).rejects.toThrow("the page closed");
+
+    for (const name of ["first", "second", "last"]) {
+      await Bun.sleep(1);
+      finish.get(name)!();
+    }
+    await Promise.all([first, second, last]);
+    expect(started).toEqual(["first", "second", "last"]);
+  });
+
   test("frees the slot of a query that fails", async () => {
     const limited = limitConcurrency(async (input) => {
       if (String(input) === "bad") throw new Error("network down");
