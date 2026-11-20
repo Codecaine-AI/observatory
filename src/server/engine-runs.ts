@@ -11,6 +11,7 @@ import {
   type KernelDatabaseHandle,
 } from "@codecaine-ai/agent-kernel-db";
 import { createKernelTraceReadApi } from "@codecaine-ai/agent-kernel/read-api";
+import { limitConcurrency, MAX_CLICKHOUSE_QUERIES } from "./query-limit";
 import {
   createArchonHomeReader,
   createClickHouseReader,
@@ -139,17 +140,18 @@ export function createEngineRunPlugins(
   kernelDatabase: ArchonKernelDatabase,
   mode: ObservatoryMode = "local",
 ) {
+  // Every reader shares one queue, so the process never runs more ClickHouse queries than the user may.
+  const gateway = settings.gateway
+    ? { ...settings.gateway, fetch: limitConcurrency(settings.gateway.fetch ?? fetch, MAX_CLICKHOUSE_QUERIES) }
+    : null;
   let reader;
   let sessions = null;
   if (mode === "server") {
-    if (!settings.gateway) throw new Error("Server mode needs TRACES_SQL_PASSWORD: its runs come from ClickHouse");
-    reader = createClickHouseReader(settings.gateway, { kernelDbPath: kernelDatabase.dbPath });
-    sessions = createSessionRoutes(createSessionReader(settings.gateway), { prefix: ENGINE_RUNS_API_PREFIX });
+    if (!gateway) throw new Error("Server mode needs TRACES_SQL_PASSWORD: its runs come from ClickHouse");
+    reader = createClickHouseReader(gateway, { kernelDbPath: kernelDatabase.dbPath });
+    sessions = createSessionRoutes(createSessionReader(gateway), { prefix: ENGINE_RUNS_API_PREFIX });
   } else {
-    reader = createArchonHomeReader(
-      settings.archonHome,
-      settings.gateway ? { gateway: settings.gateway } : {},
-    );
+    reader = createArchonHomeReader(settings.archonHome, gateway ? { gateway } : {});
   }
   const service = () => kernelDatabase.service();
   const kernelApi = createKernelTraceReadApi(
