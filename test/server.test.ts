@@ -582,7 +582,7 @@ describe("local mode", () => {
     });
     openApps.push(observatory);
 
-    for (const path of ["/api/sessions", "/api/orphans", "/api/status", "/api/workflows"]) {
+    for (const path of ["/api/sessions", "/api/orphans", "/api/unlinked-calls", "/api/engine-runs/archon/run-1/session", "/api/status", "/api/workflows"]) {
       expect((await observatory.app.handle(new Request(`http://observatory${path}`))).status).toBe(404);
     }
     expect(clickHouseRequests).toEqual([]);

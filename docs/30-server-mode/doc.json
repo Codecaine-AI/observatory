@@ -1209,7 +1209,7 @@
                 }
               },
               {
-                "insert": " and the 6 other Session routes"
+                "insert": " and the 8 other Session routes"
               }
             ],
             [
@@ -1289,6 +1289,24 @@
                 "insert": ", "
               },
               {
+                "insert": "/api/unlinked-calls",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "/api/engine-runs/:engine/:runId/session",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
                 "insert": "/api/status",
                 "attributes": {
                   "code": true
@@ -1304,7 +1322,16 @@
                 }
               },
               {
-                "insert": "."
+                "insert": ". "
+              },
+              {
+                "insert": "test/server-mode.test.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " checks that the unlinked call route and the run Session route answer, and that a write to either answers 404."
               }
             ]
           ]
