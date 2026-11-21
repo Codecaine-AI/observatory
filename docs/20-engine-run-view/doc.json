@@ -920,7 +920,7 @@
             "Times",
             [
               {
-                "insert": "A call row shows its local start time as "
+                "insert": "A call row shows its start time in UTC as "
               },
               {
                 "insert": "HH:MM:SS",
@@ -929,7 +929,7 @@
                 }
               },
               {
-                "insert": ". A detail panel shows a local date and time with the zone name. Both show the UTC value in a tooltip."
+                "insert": ". A detail panel and the Details view show a UTC date and time with the zone name. Each one shows the local time of the browser in its tooltip. The run list shows the local start time."
               }
             ]
           ],
