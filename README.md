@@ -67,12 +67,17 @@ first, so the page says when it hit that cap. Filter to narrow it.
 - `GET /health` and its alias `GET /api/health` return
   `{ status, mode, projects }`. `mode` is `local` or `server`, and the UI picks
   its shell from it.
-- Server mode only (`OBSERVATORY_MODE=server`): the 7 Session routes of the
+- Server mode only (`OBSERVATORY_MODE=server`): the 10 Session routes of the
   trace-viewer read service, read from the trace ClickHouse. They are
   `GET /api/sessions`, `GET /api/sessions/:sessionId/tree`,
   `GET /api/node-calls?kind=&id=&page=`, `GET /api/calls/:callId`,
-  `GET /api/orphans`, `GET /api/status` and `GET /api/workflows`.
+  `GET /api/calls/:callId/messages?from=&to=`, `GET /api/orphans`,
+  `GET /api/unlinked-calls`, `GET /api/engine-runs/:engine/:runId/session`,
+  `GET /api/status` and `GET /api/workflows`.
   `deploy/services-01/README.md` lists what each one answers.
+- The call reads keep the blocks they fetch in 1 in-memory cache, with a budget
+  of `OBSERVATORY_BLOCK_CACHE_MB` (default 256 MiB, 0 turns it off). A second
+  open of a call, and the next call of a conversation, read most blocks from it.
 
 In server mode the UI shows a left sidebar with Work (`/work`, a Session at
 `/sessions/:sessionId`) and Workflows (`/workflows`). A run opens the Runs page

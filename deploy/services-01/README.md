@@ -20,7 +20,8 @@ Caddy sends only `/api/*` and `/registry/*` to the API. It serves every other pa
 | `GET /api/sessions` | The Session list, last active first. Filters: `from`, `to`, `machine`, `harness`, `phase` |
 | `GET /api/sessions/:sessionId/tree` | One Session as a tree of its nodes |
 | `GET /api/node-calls?kind=&id=&page=` | The calls of one node, 100 for each page |
-| `GET /api/calls/:callId` | The prompt, answer and usage of one call |
+| `GET /api/calls/:callId` | The prompt, answer and usage of one call. `?recent=N` gives the newest N messages and the answer first |
+| `GET /api/calls/:callId/messages?from=&to=` | The older history of one call, at most 500 messages for each page |
 | `GET /api/orphans` | The nodes with no parent, and the count of calls with no node |
 | `GET /api/status` | The age of each source and each collector heartbeat |
 | `GET /api/workflows` | The workflow runs, grouped by workflow |

@@ -13,7 +13,9 @@ import {
 import { createKernelTraceReadApi } from "@codecaine-ai/agent-kernel/read-api";
 import { limitConcurrency, MAX_CLICKHOUSE_QUERIES } from "./query-limit";
 import {
+  DEFAULT_BLOCK_CACHE_BYTES,
   createArchonHomeReader,
+  createBlockCache,
   createClickHouseReader,
   createEngineRunRoutes,
   createSessionReader,
@@ -44,13 +46,19 @@ import {
  *   GET /api/sessions/:sessionId/tree  one Session as a tree
  *   GET /api/node-calls?kind=&id=      the calls of one node, 100 for each page, with
  *                                      their summaries and child nodes
- *   GET /api/calls/:callId             the content of one call
+ *   GET /api/calls/:callId             the content of one call; ?recent=N for the newest
+ *                                      N messages and the answer first
+ *   GET /api/calls/:callId/messages?from=&to=
+ *                                      the older history of a call
  *   GET /api/orphans                   the nodes with no parent whose subtree has calls
  *   GET /api/unlinked-calls            the calls with no node, grouped by cause
  *   GET /api/engine-runs/:engine/:runId/session
  *                                      the run node of a run and its Session
  *   GET /api/status                    the age of each source
  *   GET /api/workflows                 the workflow runs by workflow
+ *
+ * The call reads of both route sets share 1 block cache, with the byte budget
+ * of OBSERVATORY_BLOCK_CACHE_MB.
  */
 
 /** The prefix the viewer appends `/engine-runs/...` to. The Session routes share it. */
@@ -67,6 +75,20 @@ export interface EngineRunSettings {
   archonHome: string;
   /** The trace ClickHouse; null when no password is set, so the tree shows no calls. */
   gateway: GatewayAdapterOptions | null;
+  /** The byte budget of the call block cache. Default `DEFAULT_BLOCK_CACHE_BYTES` (256 MiB); 0 turns it off. */
+  blockCacheBytes?: number;
+}
+
+const MIB = 1024 * 1024;
+
+/** OBSERVATORY_BLOCK_CACHE_MB: the budget in MiB, a whole number from 0 to 65536. Unset means the default. */
+export function blockCacheBytesFromEnv(env: Env = Bun.env): number {
+  const value = env.OBSERVATORY_BLOCK_CACHE_MB?.trim() ?? "";
+  if (value === "") return DEFAULT_BLOCK_CACHE_BYTES;
+  if (!/^\d{1,5}$/.test(value) || Number(value) > 65_536) {
+    throw new Error(`OBSERVATORY_BLOCK_CACHE_MB must be a whole number from 0 to 65536, not ${JSON.stringify(value)}`);
+  }
+  return Number(value) * MIB;
 }
 
 type Env = Record<string, string | undefined>;
@@ -92,12 +114,15 @@ export function observatoryModeFromEnv(env: Env = Bun.env): ObservatoryMode {
  *   TRACES_SQL_PASSWORD      the read-only ClickHouse password; unset means no calls
  *   TRACES_SQL_URL           default https://traces-sql.lascari.dev/
  *   TRACES_SQL_USER          default traces_ro
+ *   OBSERVATORY_BLOCK_CACHE_MB
+ *                            the budget of the call block cache in MiB, default 256; 0 turns it off
  */
 export function engineRunSettingsFromEnv(env: Env = Bun.env): EngineRunSettings {
   const home = env.OBSERVATORY_ARCHON_HOME?.trim();
   const password = env.TRACES_SQL_PASSWORD ?? "";
   return {
     archonHome: home ? resolve(home) : join(homedir(), ".archon"),
+    blockCacheBytes: blockCacheBytesFromEnv(env),
     gateway:
       password === ""
         ? null
@@ -144,9 +169,14 @@ export function createEngineRunPlugins(
   kernelDatabase: ArchonKernelDatabase,
   mode: ObservatoryMode = "local",
 ) {
-  // Every reader shares one queue, so the process never runs more ClickHouse queries than the user may.
+  // Every reader shares one queue, so the process never runs more ClickHouse queries than the user may,
+  // and one block cache, so a call that one route read is cached for the other.
   const gateway = settings.gateway
-    ? { ...settings.gateway, fetch: limitConcurrency(settings.gateway.fetch ?? fetch, MAX_CLICKHOUSE_QUERIES) }
+    ? {
+        ...settings.gateway,
+        fetch: limitConcurrency(settings.gateway.fetch ?? fetch, MAX_CLICKHOUSE_QUERIES),
+        blockCache: settings.gateway.blockCache ?? createBlockCache(settings.blockCacheBytes ?? DEFAULT_BLOCK_CACHE_BYTES),
+      }
     : null;
   let reader;
   let sessions = null;

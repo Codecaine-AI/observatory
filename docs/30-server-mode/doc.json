@@ -589,7 +589,7 @@
           }
         },
         {
-          "insert": " sets 5 of the 6 Observatory variables, besides "
+          "insert": " sets 5 of the 7 Observatory variables, besides "
         },
         {
           "insert": "HOME",
@@ -638,7 +638,16 @@
           }
         },
         {
-          "insert": "."
+          "insert": ". Neither file sets "
+        },
+        {
+          "insert": "OBSERVATORY_BLOCK_CACHE_MB",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so the default budget applies."
         }
       ],
       "children": []
@@ -846,6 +855,18 @@
               }
             ],
             "The server exits with code 1 in server mode."
+          ],
+          [
+            [
+              {
+                "insert": "OBSERVATORY_BLOCK_CACHE_MB",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Not set, so 256",
+            "256: the call block cache keeps at most 256 MiB. A whole number from 0 to 65536 sets the budget in MiB, 0 turns the cache off, and any other value throws at start."
           ]
         ],
         "title": "Variables of the services-01 LaunchAgent"
@@ -1209,7 +1230,7 @@
                 }
               },
               {
-                "insert": " and the 8 other Session routes"
+                "insert": " and the 9 other Session routes"
               }
             ],
             [
@@ -1280,6 +1301,15 @@
                 "insert": ", "
               },
               {
+                "insert": "/api/calls/:callId/messages",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
                 "insert": "/api/orphans",
                 "attributes": {
                   "code": true
@@ -1322,7 +1352,7 @@
                 }
               },
               {
-                "insert": ". "
+                "insert": ". The call reads of this group and of the engine run routes share 1 block cache. "
               },
               {
                 "insert": "test/server-mode.test.ts",

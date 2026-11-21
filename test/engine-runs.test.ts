@@ -75,6 +75,18 @@ describe("engine run settings", () => {
     expect(engineRunSettingsFromEnv({ OBSERVATORY_ARCHON_HOME: "/data/archon" }).archonHome).toBe("/data/archon");
   });
 
+  test.each([
+    [{}, 256 * 1024 * 1024],
+    [{ OBSERVATORY_BLOCK_CACHE_MB: "64" }, 64 * 1024 * 1024],
+    [{ OBSERVATORY_BLOCK_CACHE_MB: "0" }, 0],
+  ])("give the call block cache the budget of %j", (env, bytes) => {
+    expect(engineRunSettingsFromEnv(env).blockCacheBytes).toBe(bytes);
+  });
+
+  test.each(["-1", "1.5", "lots", "70000"])("refuse a block cache budget of %s", (value) => {
+    expect(() => engineRunSettingsFromEnv({ OBSERVATORY_BLOCK_CACHE_MB: value })).toThrow("OBSERVATORY_BLOCK_CACHE_MB");
+  });
+
   test("leave the gateway out without a password, and use the traces-sql defaults with one", () => {
     expect(engineRunSettingsFromEnv({ TRACES_SQL_URL: "https://example.test/" }).gateway).toBeNull();
     expect(engineRunSettingsFromEnv({ TRACES_SQL_PASSWORD: "test-only" }).gateway).toEqual({
