@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { isPlainLeftClick, localRoute, parseRoute, routePath, serverRoute, type Route } from "../src/ui/router";
+import { apiLabel } from "../src/ui/apiOrigin";
+import { cleanAddress, isPlainLeftClick, localPageTitle, localRoute, parseRoute, routePath, serverRoute, type Route } from "../src/ui/router";
 
 describe("the page routes", () => {
   test("read and write the Action log and Traces pages", () => {
@@ -41,6 +42,79 @@ describe("the page routes", () => {
     }
     expect(parseRoute("/work/")).toEqual({ page: "work" });
     expect(parseRoute("/sessions")).toEqual({ page: "actions" });
+  });
+
+  test("keep the search and filters of Work in the query, so a reload and the back button restore them", () => {
+    const route: Route = { page: "work", filter: { search: "Session Trees", phase: "run", machine: "dev-01" } };
+    const path = routePath(route);
+    expect(path).toBe("/work?search=Session+Trees&phase=run&machine=dev-01");
+    const [pathname, search] = path.split("?");
+    expect(parseRoute(pathname!, `?${search}`)).toEqual(route);
+    // A value the read service would refuse reads as not set.
+    expect(parseRoute("/work", "?phase=a%20b&machine=dev-01")).toEqual({ page: "work", filter: { machine: "dev-01" } });
+    expect(parseRoute("/work", "?search=")).toEqual({ page: "work" });
+  });
+
+  test("clean a Work address that holds a value the page drops, and leave a clean address and other pages alone", () => {
+    const clean = (path: string, search: string) => cleanAddress(parseRoute(path, search), path, search);
+    expect(clean("/work", "?phase=bogus")).toBe("/work");
+    expect(clean("/work", "?search=trace&phase=DONE&machine=command-center")).toBe("/work?search=trace&machine=command-center");
+    expect(clean("/work", `?search=${"a".repeat(121)}&phase=done%3Bdrop`)).toBe("/work");
+    // A machine that keeps the name rule stays, so the select can show it.
+    expect(clean("/work", "?machine=nope-99")).toBeNull();
+    expect(clean("/work", "?search=trace&phase=done")).toBeNull();
+    expect(clean("/sessions/ses_01JZ8Q4V6X2M9R3T5W7Y1A3C5E", "?node=zzz")).toBeNull();
+  });
+
+  test("name each local page in the tab, and leave the Runs page to name itself", () => {
+    expect(localPageTitle({ page: "actions" }, null)).toBe("Action log");
+    expect(localPageTitle({ page: "traces", projectId: "simple-research" }, "Simple Research")).toBe("Simple Research · Traces");
+    expect(localPageTitle({ page: "traces", projectId: null }, null)).toBe("Traces");
+    expect(localPageTitle({ page: "runs", run: null }, null)).toBeNull();
+  });
+
+  test("label the API by the target the dev server proxies to, else by the page's own origin", () => {
+    expect(apiLabel("http://127.0.0.1:4160", "127.0.0.1:4161")).toBe("API 127.0.0.1:4160");
+    expect(apiLabel("", "observatory.example:443")).toBe("API observatory.example:443");
+    expect(apiLabel("", "")).toBe("API");
+  });
+
+  test("read and write the Orphans and Unlinked calls pages, which only server mode has", () => {
+    for (const [path, route] of [
+      ["/orphans", { page: "orphans" }],
+      ["/unlinked-calls", { page: "unlinked-calls" }],
+    ] as [string, Route][]) {
+      expect(parseRoute(path)).toEqual(route);
+      expect(routePath(route)).toBe(path);
+      expect(serverRoute(route) as Route).toEqual(route);
+      expect(localRoute(route)).toEqual({ page: "actions" });
+    }
+  });
+
+  test("keep the selected node and call of a Session in the query, with ids that hold colons and slashes", () => {
+    const sessionId = "ses_01JZ8Q4V6X2M9R3T5W7Y1A3C5E";
+    const call = "0f0e0d0c-0b0a-4908-8706-050403020100";
+    const routes: Route[] = [
+      { page: "session", sessionId, node: { kind: "thread", id: "11111111-aaaa-4aaa-8aaa-000000000001" } },
+      { page: "session", sessionId, node: { kind: "conversation", id: "claude:22222222/agent-a8b7" }, call },
+      { page: "session", sessionId, node: { kind: "thread", id: "thread:delegated-task:command%3Amcp%3A51" } },
+    ];
+    for (const route of routes) {
+      const path = routePath(route);
+      const [pathname, search] = path.split("?");
+      expect(pathname).toBe(`/sessions/${sessionId}`);
+      expect(parseRoute(pathname!, `?${search}`)).toEqual(route);
+    }
+    expect(routePath(routes[1]!)).toBe(`/sessions/${sessionId}?node=conversation%3Aclaude%3A22222222%2Fagent-a8b7&call=${call}`);
+  });
+
+  test("read a Session query value that breaks its rule as not set", () => {
+    const sessionId = "ses_01JZ8Q4V6X2M9R3T5W7Y1A3C5E";
+    expect(parseRoute(`/sessions/${sessionId}`, "?node=planet:x&call=0f0e0d0c-0b0a-4908-8706-050403020100")).toEqual({ page: "session", sessionId });
+    expect(parseRoute(`/sessions/${sessionId}`, "?node=thread:t1&call=not-a-uuid")).toEqual({ page: "session", sessionId, node: { kind: "thread", id: "t1" } });
+    expect(parseRoute(`/sessions/${sessionId}`, "?call=0f0e0d0c-0b0a-4908-8706-050403020100")).toEqual({ page: "session", sessionId });
+    // Local mode has no Session pages: a Session route with a selection still shows the Action log.
+    expect(localRoute(parseRoute(`/sessions/${sessionId}`, "?node=thread:t1"))).toEqual({ page: "actions" });
   });
 
   test("show the Work tab in server mode for the pages it does not have, and keep the run page", () => {

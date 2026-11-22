@@ -1,10 +1,10 @@
-import type { ReactNode } from "react";
 import { SidebarShell, type RunTarget } from "@codecaine-ai/agent-kernel-viewer-shell";
-import { Chip } from "@codecaine-ai/agent-kernel-viewer-ui";
+import { SESSION_READ_PATHS, type RunSessionAnswer } from "@codecaine-ai/agent-kernel-viewer-core";
+import { isPlainClick, useJsonResource } from "@codecaine-ai/agent-kernel-viewer-ui";
 
 import { ENGINE_RUNS_API_PREFIX } from "./api";
 import { RunsPage } from "./pages/RunsPage";
-import { isPlainLeftClick, routePath, serverRoute, useRoute, type Route } from "./router";
+import { routePath, serverRoute, useRoute, type Route } from "./router";
 import type { Theme } from "./useTheme";
 
 interface ServerAppProps {
@@ -15,9 +15,11 @@ interface ServerAppProps {
 const runRoute = (run: RunTarget): Route => ({ page: "runs", run });
 
 /**
- * The server mode shell. Work, a Session tree and Workflows render in the
- * viewer-shell sidebar shell, which reads the Session routes under /api. A
- * run opens the existing Runs page at /runs/:engine/:runId.
+ * The server mode shell. Work, a Session tree, Orphans, Unlinked calls and
+ * Workflows render in the viewer-shell sidebar shell, which reads the
+ * Session routes under /api. A run opens the Runs page at
+ * /runs/:engine/:runId inside the same shell, under the Workflows item, and
+ * links back to the Session that holds the run.
  */
 export function ServerApp({ theme, onToggleTheme }: ServerAppProps) {
   const [route, navigate] = useRoute();
@@ -27,16 +29,13 @@ export function ServerApp({ theme, onToggleTheme }: ServerAppProps) {
       {theme === "dark" ? "Light" : "Dark"}
     </button>
   );
-
-  if (page.page === "runs") {
-    return <RunFrame run={page.run} navigate={navigate} actions={themeButton} />;
-  }
+  const isRun = page.page === "runs";
 
   return (
     // The shell scrolls the document, and the body does not scroll, so this box scrolls in its place.
     <div className="h-full overflow-y-auto">
       <SidebarShell
-        route={page}
+        route={isRun ? { page: "workflows" } : page}
         routeHref={routePath}
         onNavigate={navigate}
         runHref={(run) => routePath(runRoute(run))}
@@ -45,48 +44,55 @@ export function ServerApp({ theme, onToggleTheme }: ServerAppProps) {
         appName="Traces"
         storageKey="observatory.sidebar"
         actions={themeButton}
+        hostPage={
+          isRun
+            ? {
+                item: "workflows",
+                title: page.run ? "Workflow run" : "Engine runs",
+                fill: true,
+                content: (
+                  <div className="flex min-h-0 flex-1 flex-col p-4" data-trace-shell="run">
+                    <RunsPage
+                      run={page.run}
+                      onOpen={(next) => navigate({ page: "runs", run: next })}
+                      detailExtras={(run) => <RunSessionLink run={run} navigate={navigate} />}
+                    />
+                  </div>
+                ),
+              }
+            : undefined
+        }
       />
     </div>
   );
 }
 
-/** The Runs page under a topbar with a link back to the Workflows tab. */
-function RunFrame({
-  run,
-  navigate,
-  actions,
-}: {
-  run: RunTarget | null;
-  navigate: (next: Route) => void;
-  actions: ReactNode;
-}) {
-  const workflows: Route = { page: "workflows" };
+/** The Session page of a run, with its run node selected, or null when no Session holds the run. */
+export function runSessionRoute(answer: RunSessionAnswer): Extract<Route, { page: "session" }> | null {
+  return answer.session === null ? null : { page: "session", sessionId: answer.session.id, node: answer.node };
+}
+
+/** The link from a run to its Session, with the run node selected. Nothing shows while the read is on its way or when no Session holds the run. */
+function RunSessionLink({ run, navigate }: { run: RunTarget; navigate: (next: Route) => void }) {
+  const answer = useJsonResource<RunSessionAnswer>(`${ENGINE_RUNS_API_PREFIX}${SESSION_READ_PATHS.runSession(run.engine, run.runId)}`, 0);
+  const target = answer.phase === "loaded" ? runSessionRoute(answer.data) : null;
+  if (answer.phase !== "loaded" || target === null || answer.data.session === null) return null;
+  const session = answer.data.session;
+  const href = routePath(target);
   return (
-    <div className="flex h-full min-w-0 flex-col bg-background text-foreground" data-trace-shell="run">
-      <header className="ds-topbar">
-        <a
-          href={routePath(workflows)}
-          className="ds-shell-button no-underline"
-          data-back-to-workflows=""
-          onClick={(event) => {
-            if (!isPlainLeftClick(event)) return;
-            event.preventDefault();
-            navigate(workflows);
-          }}
-        >
-          ‹ Workflows
-        </a>
-        <h1 className="ds-topbar-title">Workflow run</h1>
-        <div className="ds-topbar-actions">
-          <Chip tone="neutral" kind="read-only" title="The viewer reads with a read-only user and writes nothing.">
-            Read-only
-          </Chip>
-          {actions}
-        </div>
-      </header>
-      <main className="min-h-0 flex-1 overflow-hidden p-4">
-        <RunsPage run={run} onOpen={(next) => navigate({ page: "runs", run: next })} />
-      </main>
-    </div>
+    <a
+      href={href}
+      data-run-session-link={session.id}
+      title={`Open the Session ${session.title}, with this run selected`}
+      className="ds-shell-button min-w-0 no-underline"
+      onClick={(event) => {
+        if (!isPlainClick(event)) return;
+        event.preventDefault();
+        navigate(target);
+      }}
+    >
+      <span aria-hidden="true">‹</span>
+      <span className="min-w-0 truncate">Session: {session.title}</span>
+    </a>
   );
 }

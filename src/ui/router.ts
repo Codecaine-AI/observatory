@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { SidebarRoute } from "@codecaine-ai/agent-kernel-viewer-shell";
+import { parseSessionQuery, parseWorkQuery, sessionQuery, workQuery, type SidebarRoute } from "@codecaine-ai/agent-kernel-viewer-shell";
 
 /**
  * The Observatory pages.
@@ -7,8 +7,12 @@ import type { SidebarRoute } from "@codecaine-ai/agent-kernel-viewer-shell";
  *   /                       the Action log (local mode), the Work tab (server mode)
  *   /traces/:projectId      the kernel Traces page (local mode)
  *   /runs/:engine/:runId    the engine Runs page (both modes)
- *   /work                   the Work tab: the Sessions and the nodes with no parent
- *   /sessions/:sessionId    one Session as a tree
+ *   /work                   the Work tab: the Sessions; ?search=<text>&phase=<phase>&machine=<machine>
+ *                           holds the search and the filters
+ *   /sessions/:sessionId    one Session as a tree; ?node=<kind>:<id>&call=<callId>
+ *                           holds the selected node and call
+ *   /orphans                the nodes with no parent edge whose subtree has calls
+ *   /unlinked-calls         the calls that join no node, grouped by cause
  *   /workflows              the Workflows tab: the workflow runs by workflow
  */
 export type Route =
@@ -17,11 +21,20 @@ export type Route =
   | { page: "runs"; run: { engine: string; runId: string } | null }
   | SidebarRoute;
 
-export function parseRoute(pathname: string): Route {
-  if (/^\/work\/?$/.test(pathname)) return { page: "work" };
+/** The route of a URL. `search` is the query, such as `?node=thread:t1`; only the Work and Session routes read it. */
+export function parseRoute(pathname: string, search = ""): Route {
+  if (/^\/work\/?$/.test(pathname)) {
+    const filter = parseWorkQuery(search);
+    return Object.keys(filter).length > 0 ? { page: "work", filter } : { page: "work" };
+  }
   if (/^\/workflows\/?$/.test(pathname)) return { page: "workflows" };
+  if (/^\/orphans\/?$/.test(pathname)) return { page: "orphans" };
+  if (/^\/unlinked-calls\/?$/.test(pathname)) return { page: "unlinked-calls" };
   const session = /^\/sessions\/([^/]+)\/?$/.exec(pathname);
-  if (session?.[1]) return { page: "session", sessionId: decodeSegment(session[1]) };
+  if (session?.[1]) {
+    const { node, call } = parseSessionQuery(search);
+    return { page: "session", sessionId: decodeSegment(session[1]), ...(node ? { node } : {}), ...(call ? { call } : {}) };
+  }
   const runs = /^\/runs(?:\/([^/]+)\/([^/]+))?\/?$/.exec(pathname);
   if (runs) {
     return {
@@ -65,15 +78,27 @@ export function serverRoute(route: Route): SidebarRoute | Extract<Route, { page:
 
 /** The page that local mode shows for a route. Local mode has no Session routes, so their pages show the Action log. */
 export function localRoute(route: Route): Exclude<Route, SidebarRoute> {
-  if (route.page === "work" || route.page === "session" || route.page === "workflows") return { page: "actions" };
-  return route;
+  if (route.page === "runs" || route.page === "actions" || route.page === "traces") return route;
+  return { page: "actions" };
+}
+
+/**
+ * The tab title of a local page, before the app name: the Action log, or the
+ * Traces page of a project. Null for the Runs page, which names itself.
+ */
+export function localPageTitle(route: Exclude<Route, SidebarRoute>, projectName: string | null): string | null {
+  if (route.page === "runs") return null;
+  if (route.page === "traces") return projectName ? `${projectName} · Traces` : "Traces";
+  return "Action log";
 }
 
 export function routePath(route: Route): string {
   if (route.page === "actions") return "/";
-  if (route.page === "work") return "/work";
+  if (route.page === "work") return `/work${workQuery(route.filter)}`;
   if (route.page === "workflows") return "/workflows";
-  if (route.page === "session") return `/sessions/${encodeURIComponent(route.sessionId)}`;
+  if (route.page === "orphans") return "/orphans";
+  if (route.page === "unlinked-calls") return "/unlinked-calls";
+  if (route.page === "session") return `/sessions/${encodeURIComponent(route.sessionId)}${sessionQuery(route)}`;
   if (route.page === "runs") {
     return route.run
       ? `/runs/${encodeURIComponent(route.run.engine)}/${encodeURIComponent(route.run.runId)}`
@@ -108,21 +133,44 @@ export function isPlainLeftClick(event: ClickLike): boolean {
   );
 }
 
-/** Reads the route from the URL and keeps it in step with pushState and back/forward. */
+/**
+ * The address to write in place of a Work address whose query holds a value
+ * the page drops (such as `?phase=bogus`), so the address shows the filter
+ * that applies. Null when the address is already clean, and for every other
+ * page.
+ */
+export function cleanAddress(route: Route, pathname: string, search: string): string | null {
+  if (route.page !== "work") return null;
+  const path = routePath(route);
+  return path === `${pathname}${search}` ? null : path;
+}
+
+/** The route of the address bar. A Work address with dropped values is replaced in place, with no new history entry. */
+function readAddress(): Route {
+  const { pathname, search, hash } = window.location;
+  const route = parseRoute(pathname, search);
+  const clean = cleanAddress(route, pathname, search);
+  if (clean !== null) window.history.replaceState(window.history.state, "", `${clean}${hash}`);
+  return route;
+}
+
+/**
+ * Reads the route from the URL and keeps it in step with pushState and
+ * back/forward. Each new address is a history entry, so on a Session page
+ * the back button walks the selection history.
+ */
 export function useRoute(): [Route, (next: Route) => void] {
-  const [route, setRoute] = useState<Route>(() =>
-    parseRoute(window.location.pathname),
-  );
+  const [route, setRoute] = useState<Route>(readAddress);
 
   useEffect(() => {
-    const onPopState = () => setRoute(parseRoute(window.location.pathname));
+    const onPopState = () => setRoute(readAddress());
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
   const navigate = useCallback((next: Route) => {
     const path = routePath(next);
-    if (path !== window.location.pathname) {
+    if (path !== `${window.location.pathname}${window.location.search}`) {
       window.history.pushState(null, "", path);
     }
     setRoute(next);

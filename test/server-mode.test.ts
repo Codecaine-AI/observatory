@@ -3,7 +3,13 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { ARCHON_RUN_ROWS_SQL, RUN_CALLS_SQL, SESSIONS_SQL } from "@codecaine-ai/agent-kernel-viewer-read-service";
+import {
+  ARCHON_RUN_ROWS_SQL,
+  RUN_CALLS_SQL,
+  RUN_SESSION_SQL,
+  SESSIONS_SQL,
+  UNLINKED_CALL_GROUPS_SQL,
+} from "@codecaine-ai/agent-kernel-viewer-read-service";
 
 import { createObservatoryApp, type ObservatoryApp } from "../src/server/app";
 import { observatoryModeFromEnv } from "../src/server/engine-runs";
@@ -55,6 +61,22 @@ function clickHouseAnswer(sql: string): string {
       harness_mix: [["claude-code"], [3]], started_at: "2026-11-17 09:00:00.000", last_active_at: "2026-11-17 10:00:00.000",
     }]);
   }
+  if (sql.startsWith(UNLINKED_CALL_GROUPS_SQL)) {
+    return jsonLines([{
+      ua: "codex_exec/0.167.2 (Ubuntu 26.4.0; x86_64) unknown (codex_exec; 0.167.2)", orig: "", cc_session: 0, has_headers: 1,
+      has_session_id: 1, group_calls: 93159, call_id: CALL_ID, started_at: "2026-11-21 17:41:53.122", outcome: "completed",
+      model: "gpt-6.2-sol", harness_session_id: "019a0000-0000-7000-8000-000000000001",
+    }]);
+  }
+  if (sql.startsWith(RUN_SESSION_SQL)) {
+    return jsonLines([{
+      kind: "run", id: "(archon, run-1)", label: "review", machine: "services-01", harness: "", started_at: "2026-11-17 10:00:00.000",
+      ended_at: null, parent_kind: "thread", parent_id: "11111111-aaaa-4aaa-8aaa-000000000001", parent_rule: "parent_tag",
+      parent_tier: "stamped", parent_observed_at: "2026-11-17 10:00:00.000", call_count: 1, input_tokens: null, output_tokens: null,
+      session_id: SESSION_ID, session_label: "Session Trees", record_found: 1, session_title: "Session Trees", session_phase: "run",
+      session_status_group: "active",
+    }]);
+  }
   if (sql.startsWith(ARCHON_RUN_ROWS_SQL)) {
     const runRow = { id: "run-1", workflow_name: "review", status: "completed", started_at: "2026-11-17 10:00:00", completed_at: "2026-11-17 10:00:05", metadata: null };
     const nodeRow = (eventType: string, order: number) => ({
@@ -86,6 +108,7 @@ function serverApp() {
   directories.push(directory);
   const projectRequests: string[] = [];
   const clickHouseUsers: string[] = [];
+  const clickHouseUrls: URL[] = [];
   const observatory = createObservatoryApp(registryWithAutoLaunch(directory), {
     mode: "server",
     fetch: async (input) => {
@@ -98,15 +121,16 @@ function serverApp() {
         url: "https://clickhouse.test/",
         user: "reader",
         password: "test-only",
-        fetch: async (_input, init) => {
+        fetch: async (input, init) => {
           clickHouseUsers.push(new Headers(init?.headers).get("authorization") ?? "");
+          clickHouseUrls.push(new URL(String(input)));
           return new Response(clickHouseAnswer(String(init?.body)));
         },
       },
     },
   });
   apps.push(observatory);
-  return { observatory, projectRequests, clickHouseUsers };
+  return { observatory, projectRequests, clickHouseUsers, clickHouseUrls };
 }
 
 const call = (app: ObservatoryApp, method: string, path: string) =>
@@ -185,11 +209,51 @@ describe("server mode", () => {
     expect(clickHouseUsers).toEqual([`Basic ${Buffer.from("reader:test-only").toString("base64")}`]);
   });
 
+  test("passes the Session search to ClickHouse as a parameter", async () => {
+    const { observatory, clickHouseUrls } = serverApp();
+
+    const response = await call(observatory, "GET", "/api/sessions?search=Session%20Trees");
+
+    expect(response.status).toBe(200);
+    expect(((await response.json()) as { sessions: unknown[] }).sessions).toHaveLength(1);
+    expect(clickHouseUrls.map((url) => url.searchParams.get("param_search"))).toEqual(["Session Trees"]);
+  });
+
+  test("groups the calls with no node by cause", async () => {
+    const { observatory } = serverApp();
+
+    const response = await call(observatory, "GET", "/api/unlinked-calls");
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { unlinked: number; groups: { cause: string; harness: string; entrypoint: string; calls: number }[] };
+    expect(body.unlinked).toBe(93159);
+    expect(body.groups.map(({ cause, harness, entrypoint, calls }) => ({ cause, harness, entrypoint, calls }))).toEqual([
+      { cause: "headless-session", harness: "codex", entrypoint: "codex_exec", calls: 93159 },
+    ]);
+  });
+
+  test("gives the Session of a run, next to the run routes", async () => {
+    const { observatory } = serverApp();
+
+    const response = await call(observatory, "GET", "/api/engine-runs/archon/run-1/session");
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      node: { kind: "run", id: "(archon, run-1)" },
+      runNode: { label: "review" },
+      session: { id: SESSION_ID, title: "Session Trees", phase: "run", statusGroup: "active" },
+    });
+    // The run route itself still answers.
+    expect((await call(observatory, "GET", "/api/engine-runs/archon/run-1")).status).toBe(200);
+  });
+
   test.each([
     ["/api/sessions/not-a-session/tree"],
     ["/api/calls/not-a-uuid"],
     ["/api/node-calls?kind=thread"],
     ["/api/sessions?machine=a%20b"],
+    [`/api/sessions?search=${"a".repeat(121)}`],
+    ["/api/engine-runs/archon/a.b/session"],
   ])("answers 400 to GET %s, with no ClickHouse query", async (path) => {
     const { observatory, clickHouseUsers } = serverApp();
 
@@ -201,6 +265,8 @@ describe("server mode", () => {
     ["POST", "/api/sessions"],
     ["DELETE", `/api/sessions/${SESSION_ID}/tree`],
     ["POST", "/api/calls/0b9d4c55-2f7e-4c1a-9a43-5f0d6c2e8a11"],
+    ["POST", "/api/unlinked-calls"],
+    ["PUT", "/api/engine-runs/archon/run-1/session"],
   ])("mounts no write route: %s %s answers 404", async (method, path) => {
     const { observatory } = serverApp();
 

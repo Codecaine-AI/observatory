@@ -51,5 +51,8 @@ console.log(
 console.log(
   `Gateway calls: ${engineRuns.gateway ? `read from ${engineRuns.gateway.url}` : "off (TRACES_SQL_PASSWORD is not set)"}`,
 );
+if (engineRuns.gateway) {
+  console.log(`Call block cache: ${Math.round((engineRuns.blockCacheBytes ?? 0) / 1024 / 1024)} MiB`);
+}
 
 export { observatory };

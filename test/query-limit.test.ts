@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { ClickHouseBusyError } from "@codecaine-ai/agent-kernel-viewer-read-service";
+
 import { limitConcurrency } from "../src/server/query-limit";
 
 describe("the ClickHouse query queue", () => {
@@ -114,6 +116,53 @@ describe("the ClickHouse query queue", () => {
     await Bun.sleep(1);
     finish.shift()!();
     expect((await overridden).status).toBe(200);
+  });
+
+  test("refuses a query at once when the queue is full, and takes new ones when it drains", async () => {
+    const finish: (() => void)[] = [];
+    const limited = limitConcurrency(
+      async () => {
+        const body = new Promise<ArrayBuffer>((resolve) => finish.push(() => resolve(new ArrayBuffer(0))));
+        return { status: 200, statusText: "OK", headers: new Headers(), arrayBuffer: () => body } as unknown as Response;
+      },
+      1,
+      { maxWaiting: 2 },
+    );
+    const held = [limited("running"), limited("waiting 1"), limited("waiting 2")];
+    const refused = limited("one too many");
+    await expect(refused).rejects.toBeInstanceOf(ClickHouseBusyError);
+    await expect(refused).rejects.toThrow("2 trace store queries wait already");
+    for (let round = 0; round < 3; round++) {
+      await Bun.sleep(1);
+      finish.shift()!();
+    }
+    await Promise.all(held);
+    const after = limited("after");
+    await Bun.sleep(1);
+    finish.shift()!();
+    expect((await after).status).toBe(200);
+  });
+
+  test("stops a running query when its signal aborts, and frees its slot for the next", async () => {
+    const started: string[] = [];
+    const limited = limitConcurrency(async (input, init) => {
+      started.push(String(input));
+      const signal = init?.signal;
+      const body = new Promise<ArrayBuffer>((resolve, reject) => {
+        // A real fetch rejects its body read when its signal aborts, which cancels the ClickHouse query.
+        signal?.addEventListener("abort", () => reject(signal.reason));
+        if (String(input) === "next") resolve(new ArrayBuffer(0));
+      });
+      return { status: 200, statusText: "OK", headers: new Headers(), arrayBuffer: () => body } as unknown as Response;
+    }, 1);
+    const request = new AbortController();
+    const running = limited("running", { signal: request.signal });
+    const next = limited("next");
+    await Bun.sleep(1);
+    request.abort(new Error("the request ended"));
+    await expect(running).rejects.toThrow("the request ended");
+    expect((await next).status).toBe(200);
+    expect(started).toEqual(["running", "next"]);
   });
 
   test("frees the slot of a query that fails", async () => {

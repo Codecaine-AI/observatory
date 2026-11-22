@@ -25,16 +25,20 @@
         "sm-h-keep",
         "sm-keep-lead",
         "sm-keep",
+        "sm-keep-calls",
         "sm-keep-reader",
         "sm-keep-diff",
         "sm-h-queue",
         "sm-queue-lead",
-        "sm-queue-1",
-        "sm-queue-2",
+        "sm-queue-g-slots",
+        "sm-queue-g-abort",
+        "sm-queue-g-full",
         "sm-h-ui",
         "sm-ui-lead",
         "sm-ui-retry",
         "sm-ui-pages",
+        "sm-ui-select",
+        "sm-ui-clean",
         "sm-ui-shell"
       ]
     },
@@ -53,7 +57,7 @@
           }
         },
         {
-          "insert": ", the API mounts no route that writes, runs a command, or reaches a registry project. It reads the engine runs and the Session trees from the trace ClickHouse, and the UI shows a Work and Workflows sidebar. This page gives what server mode turns off, the settings of the services-01 LaunchAgent, what stays on, and the server mode UI."
+          "insert": ", the API mounts no route that writes, runs a command, or reaches a registry project. It reads the engine runs and the Session trees from the trace ClickHouse, and the UI shows a sidebar with Work, Orphans, Unlinked calls and Workflows. This page gives what server mode turns off, the settings of the services-01 LaunchAgent, what stays on, and the server mode UI."
         }
       ],
       "children": []
@@ -589,7 +593,7 @@
           }
         },
         {
-          "insert": " sets 5 of the 6 Observatory variables, besides "
+          "insert": " sets 5 of the 7 Observatory variables, besides "
         },
         {
           "insert": "HOME",
@@ -638,7 +642,16 @@
           }
         },
         {
-          "insert": "."
+          "insert": ". Neither file sets "
+        },
+        {
+          "insert": "OBSERVATORY_BLOCK_CACHE_MB",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so the default budget applies."
         }
       ],
       "children": []
@@ -846,6 +859,18 @@
               }
             ],
             "The server exits with code 1 in server mode."
+          ],
+          [
+            [
+              {
+                "insert": "OBSERVATORY_BLOCK_CACHE_MB",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Not set, so 256",
+            "256: the call block cache keeps at most 256 MiB. A whole number from 0 to 65536 sets the budget in MiB, 0 turns the cache off, and any other value throws at start."
           ]
         ],
         "title": "Variables of the services-01 LaunchAgent"
@@ -1209,7 +1234,7 @@
                 }
               },
               {
-                "insert": " and the 6 other Session routes"
+                "insert": " and the 9 other Session routes"
               }
             ],
             [
@@ -1280,7 +1305,34 @@
                 "insert": ", "
               },
               {
+                "insert": "/api/calls/:callId/messages",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
                 "insert": "/api/orphans",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "/api/unlinked-calls",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "/api/engine-runs/:engine/:runId/session",
                 "attributes": {
                   "code": true
                 }
@@ -1304,13 +1356,75 @@
                 }
               },
               {
-                "insert": "."
+                "insert": ". The call reads of this group and of the engine run routes share 1 block cache. "
+              },
+              {
+                "insert": "test/server-mode.test.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " checks that the unlinked call route and the run Session route answer, and that a write to either answers 404."
               }
             ]
           ]
         ],
         "title": "Routes that server mode serves"
       },
+      "children": []
+    },
+    "sm-keep-calls": {
+      "id": "sm-keep-calls",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "GET /api/node-calls",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " reads 100 calls of a node by cursor: the first ones, the ones "
+        },
+        {
+          "insert": "after",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "from",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "before",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " a cursor, or the ones around a "
+        },
+        {
+          "insert": "call",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The Read Service page of the trace-viewer docs gives the cursor rule and the answer."
+        }
+      ],
       "children": []
     },
     "sm-keep-reader": {
@@ -1458,6 +1572,26 @@
       ],
       "children": []
     },
+    "sm-queue-g-slots": {
+      "id": "sm-queue-g-slots",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Slots",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "sm-queue-1",
+        "sm-queue-1b",
+        "sm-queue-1c"
+      ]
+    },
     "sm-queue-1": {
       "id": "sm-queue-1",
       "type": "list-item",
@@ -1475,10 +1609,56 @@
           }
         },
         {
-          "insert": ", 2, queries run at a time, in the order they came. A query keeps its slot until its answer body is read, and a waiting query takes the slot of the query that ends."
+          "insert": ", 2, queries run at a time, in the order they came."
         }
       ],
       "children": []
+    },
+    "sm-queue-1b": {
+      "id": "sm-queue-1b",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "A query keeps its slot until its answer body is read, and a waiting query takes the slot of the query that ends."
+        }
+      ],
+      "children": []
+    },
+    "sm-queue-1c": {
+      "id": "sm-queue-1c",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "The read service still retries an error 202 that another client causes."
+        }
+      ],
+      "children": []
+    },
+    "sm-queue-g-abort": {
+      "id": "sm-queue-g-abort",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Requests That End Early",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "sm-queue-2",
+        "sm-queue-2b",
+        "sm-queue-2c"
+      ]
     },
     "sm-queue-2": {
       "id": "sm-queue-2",
@@ -1488,7 +1668,96 @@
       },
       "text": [
         {
-          "insert": "A waiting query whose request is aborted leaves the queue and rejects with the reason of its signal. The read service still retries an error 202 that another client causes."
+          "insert": "Each query carries the signal of the HTTP request that asked for it, joined with the read service's timeout."
+        }
+      ],
+      "children": []
+    },
+    "sm-queue-2b": {
+      "id": "sm-queue-2b",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "When the request ends early, a waiting query leaves the queue and rejects with the reason of the signal."
+        }
+      ],
+      "children": []
+    },
+    "sm-queue-2c": {
+      "id": "sm-queue-2c",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "A running query stops too: its HTTP request to ClickHouse aborts, and ClickHouse cancels the query."
+        }
+      ],
+      "children": []
+    },
+    "sm-queue-g-full": {
+      "id": "sm-queue-g-full",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "A Full Queue",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "sm-queue-3",
+        "sm-queue-3b"
+      ]
+    },
+    "sm-queue-3": {
+      "id": "sm-queue-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "At most "
+        },
+        {
+          "insert": "MAX_WAITING_QUERIES",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", 64, queries wait."
+        }
+      ],
+      "children": []
+    },
+    "sm-queue-3b": {
+      "id": "sm-queue-3b",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "One more fails at once with "
+        },
+        {
+          "insert": "ClickHouseBusyError",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and the route answers 503 with its message."
         }
       ],
       "children": []
@@ -1652,9 +1921,36 @@
                 "attributes": {
                   "code": true
                 }
+              },
+              {
+                "insert": " and its query "
+              },
+              {
+                "insert": "search",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "phase",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "machine",
+                "attributes": {
+                  "code": true
+                }
               }
             ],
-            "The Work tab: the Session list, then the nodes with no parent",
+            "The Work tab: the Session list with a search box and the phase and machine filters",
             "The Action log"
           ],
           [
@@ -1664,9 +1960,51 @@
                 "attributes": {
                   "code": true
                 }
+              },
+              {
+                "insert": " and its query "
+              },
+              {
+                "insert": "node",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "call",
+                "attributes": {
+                  "code": true
+                }
               }
             ],
-            "One Session: the tree on the left, the node detail on the right",
+            "One Session in the trace workspace: the span tree on the left, and the detail of the selected node or call on the right",
+            "The Action log"
+          ],
+          [
+            [
+              {
+                "insert": "/orphans",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The nodes with calls and no parent edge, by group, and a link to the Unlinked calls page",
+            "The Action log"
+          ],
+          [
+            [
+              {
+                "insert": "/unlinked-calls",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The calls that join no node, grouped by cause. A click on a call opens its body.",
             "The Action log"
           ],
           [
@@ -1690,25 +2028,120 @@
                 }
               }
             ],
-            [
-              {
-                "insert": "The Runs page under a topbar with a "
-              },
-              {
-                "insert": "Workflows",
-                "attributes": {
-                  "bold": true
-                }
-              },
-              {
-                "insert": " link back"
-              }
-            ],
-            "The Runs page"
+            "The Runs page in the sidebar shell, under Workflows. The heading and the tab title name the run. Its header shows the UTC start time and a link to the Session that holds the run.",
+            "The Runs page with the project sidebar. Its times show in UTC."
           ]
         ],
         "title": "Pages in each mode"
       },
+      "children": []
+    },
+    "sm-ui-select": {
+      "id": "sm-ui-select",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The Work route holds its search and filters as "
+        },
+        {
+          "insert": "?search=<text>&phase=<phase>&machine=<machine>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The Session route holds the selected node and call as "
+        },
+        {
+          "insert": "?node=<kind>:<id>&call=<callId>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". "
+        },
+        {
+          "insert": "parseRoute",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "src/ui/router.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "src/ui/router.ts",
+              "symbol": "parseRoute"
+            }
+          }
+        },
+        {
+          "insert": " reads each query and "
+        },
+        {
+          "insert": "routePath",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " writes it. "
+        },
+        {
+          "insert": "useRoute",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " pushes a history entry for each new address, so a reload restores the filters and the selection, and the back button returns to the last one."
+        }
+      ],
+      "children": []
+    },
+    "sm-ui-clean": {
+      "id": "sm-ui-clean",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A Work address with a value that the page drops, such as "
+        },
+        {
+          "insert": "?phase=bogus",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", gets its clean address in place of the old one ("
+        },
+        {
+          "insert": "cleanAddress",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "). "
+        },
+        {
+          "insert": "useRoute",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " replaces the history entry and pushes none, so the address, the selects and the read show the same filter."
+        }
+      ],
       "children": []
     },
     "sm-ui-shell": {
@@ -1764,7 +2197,43 @@
           }
         },
         {
-          "insert": "."
+          "insert": ", and "
+        },
+        {
+          "insert": "ServerApp",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " draws that Runs page in the shell through "
+        },
+        {
+          "insert": "hostPage",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". "
+        },
+        {
+          "insert": "runSessionRoute",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " turns the answer of "
+        },
+        {
+          "insert": "GET /api/engine-runs/:engine/:runId/session",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " into the Session link, with the run node selected. No link shows when no Session holds the run."
         }
       ],
       "children": []

@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { fetchProjectLogs, type RegistryProject } from "../api";
+import { apiLabel } from "../apiOrigin";
 import { isPlainLeftClick, routePath } from "../router";
 
 export interface ProjectActionState {
@@ -197,8 +198,12 @@ export function ProjectSidebar({
       </nav>
 
       <footer className="flex items-center justify-between border-t border-border px-4 py-3">
-        <span className="font-mono text-(length:--ds-font-size-ui-2xs) uppercase tracking-[0.12em] text-muted-foreground">
-          API :4890
+        <span
+          data-api-origin=""
+          title="The Observatory API this page reads"
+          className="min-w-0 truncate font-mono text-(length:--ds-font-size-ui-2xs) uppercase tracking-[0.12em] text-muted-foreground"
+        >
+          {apiLabel()}
         </span>
         <button
           type="button"

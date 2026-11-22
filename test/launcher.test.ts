@@ -240,7 +240,9 @@ describe("ProjectLauncher", () => {
       launchCommand: `bun ${shellQuote(scriptPath)}`,
     });
     const launcher = makeLauncher(entry, directory, globalThis.fetch, {
-      startTimeoutMs: 120,
+      // The child must print its line before the timeout. A bun child needs more than
+      // 120 ms to start on a busy machine.
+      startTimeoutMs: 1500,
       initialPollDelayMs: 10,
       maxPollDelayMs: 20,
       stopGraceMs: 100,
@@ -255,7 +257,7 @@ describe("ProjectLauncher", () => {
       "waiting without a health server",
     );
     expect(launcher.logs(entry.id).lines.join("\n")).toContain(
-      "did not become live within 120ms",
+      "did not become live within 1500ms",
     );
   });
 });
