@@ -36,6 +36,7 @@
         "sm-ui-retry",
         "sm-ui-pages",
         "sm-ui-select",
+        "sm-ui-clean",
         "sm-ui-shell"
       ]
     },
@@ -1891,6 +1892,44 @@
         },
         {
           "insert": " pushes a history entry for each new address, so a reload restores the filters and the selection, and the back button returns to the last one."
+        }
+      ],
+      "children": []
+    },
+    "sm-ui-clean": {
+      "id": "sm-ui-clean",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A Work address with a value that the page drops, such as "
+        },
+        {
+          "insert": "?phase=bogus",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", gets its clean address in place of the old one ("
+        },
+        {
+          "insert": "cleanAddress",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "). "
+        },
+        {
+          "insert": "useRoute",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " replaces the history entry and pushes none, so the address, the selects and the read show the same filter."
         }
       ],
       "children": []

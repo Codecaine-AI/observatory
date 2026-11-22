@@ -82,6 +82,16 @@ export function localRoute(route: Route): Exclude<Route, SidebarRoute> {
   return { page: "actions" };
 }
 
+/**
+ * The tab title of a local page, before the app name: the Action log, or the
+ * Traces page of a project. Null for the Runs page, which names itself.
+ */
+export function localPageTitle(route: Exclude<Route, SidebarRoute>, projectName: string | null): string | null {
+  if (route.page === "runs") return null;
+  if (route.page === "traces") return projectName ? `${projectName} · Traces` : "Traces";
+  return "Action log";
+}
+
 export function routePath(route: Route): string {
   if (route.page === "actions") return "/";
   if (route.page === "work") return `/work${workQuery(route.filter)}`;
@@ -124,17 +134,36 @@ export function isPlainLeftClick(event: ClickLike): boolean {
 }
 
 /**
+ * The address to write in place of a Work address whose query holds a value
+ * the page drops (such as `?phase=bogus`), so the address shows the filter
+ * that applies. Null when the address is already clean, and for every other
+ * page.
+ */
+export function cleanAddress(route: Route, pathname: string, search: string): string | null {
+  if (route.page !== "work") return null;
+  const path = routePath(route);
+  return path === `${pathname}${search}` ? null : path;
+}
+
+/** The route of the address bar. A Work address with dropped values is replaced in place, with no new history entry. */
+function readAddress(): Route {
+  const { pathname, search, hash } = window.location;
+  const route = parseRoute(pathname, search);
+  const clean = cleanAddress(route, pathname, search);
+  if (clean !== null) window.history.replaceState(window.history.state, "", `${clean}${hash}`);
+  return route;
+}
+
+/**
  * Reads the route from the URL and keeps it in step with pushState and
  * back/forward. Each new address is a history entry, so on a Session page
  * the back button walks the selection history.
  */
 export function useRoute(): [Route, (next: Route) => void] {
-  const [route, setRoute] = useState<Route>(() =>
-    parseRoute(window.location.pathname, window.location.search),
-  );
+  const [route, setRoute] = useState<Route>(readAddress);
 
   useEffect(() => {
-    const onPopState = () => setRoute(parseRoute(window.location.pathname, window.location.search));
+    const onPopState = () => setRoute(readAddress());
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);

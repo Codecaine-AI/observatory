@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { isPlainLeftClick, localRoute, parseRoute, routePath, serverRoute, type Route } from "../src/ui/router";
+import { apiLabel } from "../src/ui/apiOrigin";
+import { cleanAddress, isPlainLeftClick, localPageTitle, localRoute, parseRoute, routePath, serverRoute, type Route } from "../src/ui/router";
 
 describe("the page routes", () => {
   test("read and write the Action log and Traces pages", () => {
@@ -52,6 +53,30 @@ describe("the page routes", () => {
     // A value the read service would refuse reads as not set.
     expect(parseRoute("/work", "?phase=a%20b&machine=dev-01")).toEqual({ page: "work", filter: { machine: "dev-01" } });
     expect(parseRoute("/work", "?search=")).toEqual({ page: "work" });
+  });
+
+  test("clean a Work address that holds a value the page drops, and leave a clean address and other pages alone", () => {
+    const clean = (path: string, search: string) => cleanAddress(parseRoute(path, search), path, search);
+    expect(clean("/work", "?phase=bogus")).toBe("/work");
+    expect(clean("/work", "?search=trace&phase=DONE&machine=command-center")).toBe("/work?search=trace&machine=command-center");
+    expect(clean("/work", `?search=${"a".repeat(121)}&phase=done%3Bdrop`)).toBe("/work");
+    // A machine that keeps the name rule stays, so the select can show it.
+    expect(clean("/work", "?machine=nope-99")).toBeNull();
+    expect(clean("/work", "?search=trace&phase=done")).toBeNull();
+    expect(clean("/sessions/ses_01JZ8Q4V6X2M9R3T5W7Y1A3C5E", "?node=zzz")).toBeNull();
+  });
+
+  test("name each local page in the tab, and leave the Runs page to name itself", () => {
+    expect(localPageTitle({ page: "actions" }, null)).toBe("Action log");
+    expect(localPageTitle({ page: "traces", projectId: "simple-research" }, "Simple Research")).toBe("Simple Research · Traces");
+    expect(localPageTitle({ page: "traces", projectId: null }, null)).toBe("Traces");
+    expect(localPageTitle({ page: "runs", run: null }, null)).toBeNull();
+  });
+
+  test("label the API by the target the dev server proxies to, else by the page's own origin", () => {
+    expect(apiLabel("http://127.0.0.1:4160", "127.0.0.1:4161")).toBe("API 127.0.0.1:4160");
+    expect(apiLabel("", "observatory.example:443")).toBe("API observatory.example:443");
+    expect(apiLabel("", "")).toBe("API");
   });
 
   test("read and write the Orphans and Unlinked calls pages, which only server mode has", () => {

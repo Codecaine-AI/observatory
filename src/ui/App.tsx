@@ -5,6 +5,7 @@ import {
   useState,
   type MouseEvent,
 } from "react";
+import { usePageTitle } from "@codecaine-ai/agent-kernel-viewer-shell";
 
 import {
   fetchObservatoryMode,
@@ -22,7 +23,7 @@ import {
 import { ActionsPage } from "./pages/ActionsPage";
 import { RunsPage } from "./pages/RunsPage";
 import { TracesPage } from "./pages/TracesPage";
-import { isPlainLeftClick, localRoute, routePath, useRoute, type Route } from "./router";
+import { isPlainLeftClick, localPageTitle, localRoute, routePath, useRoute, type Route } from "./router";
 import { ServerApp } from "./ServerApp";
 import { resolveTracesProject } from "./tracesProject";
 import { useTheme, type Theme } from "./useTheme";
@@ -154,6 +155,14 @@ function LocalApp({ theme, onToggleTheme }: { theme: Theme; onToggleTheme: () =>
   );
   const activeProject =
     tracesProject?.kind === "project" ? tracesProject.project : null;
+  // The tab names the page, as the server mode pages and the Runs page do.
+  usePageTitle(
+    localPageTitle(
+      route,
+      activeProject?.name ?? (tracesProject?.kind === "not-found" ? tracesProject.projectId : null),
+    ),
+    "Observatory",
+  );
 
   const runProjectAction = useCallback(
     async (projectId: string, kind: "start" | "stop") => {

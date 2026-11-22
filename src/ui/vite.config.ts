@@ -44,10 +44,14 @@ const apiProxy: ProxyOptions = {
   },
 };
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   root: UI_DIR,
   appType: "spa",
   plugins: [react()],
+  define: {
+    // The API the dev server proxies to, for the local sidebar. A build is served beside the API at the same origin.
+    __OBSERVATORY_API_TARGET__: JSON.stringify(command === "serve" ? API_TARGET : ""),
+  },
   css: {
     postcss: { plugins: [tailwindcss()] },
   },
@@ -75,4 +79,4 @@ export default defineConfig({
     host: "127.0.0.1",
     port: FRONTEND_PORT,
   },
-});
+}));
