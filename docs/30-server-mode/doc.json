@@ -35,6 +35,7 @@
         "sm-ui-lead",
         "sm-ui-retry",
         "sm-ui-pages",
+        "sm-ui-select",
         "sm-ui-shell"
       ]
     },
@@ -1721,9 +1722,27 @@
                 "attributes": {
                   "code": true
                 }
+              },
+              {
+                "insert": " and its query "
+              },
+              {
+                "insert": "node",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "call",
+                "attributes": {
+                  "code": true
+                }
               }
             ],
-            "One Session: the tree on the left, the node detail on the right",
+            "One Session in the trace workspace: the span tree on the left, and the detail of the selected node or call on the right",
             "The Action log"
           ],
           [
@@ -1766,6 +1785,67 @@
         ],
         "title": "Pages in each mode"
       },
+      "children": []
+    },
+    "sm-ui-select": {
+      "id": "sm-ui-select",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The Session route holds the selected node and call in its query, "
+        },
+        {
+          "insert": "?node=<kind>:<id>&call=<callId>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". "
+        },
+        {
+          "insert": "parseRoute",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "src/ui/router.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "src/ui/router.ts",
+              "symbol": "parseRoute"
+            }
+          }
+        },
+        {
+          "insert": " reads it and "
+        },
+        {
+          "insert": "routePath",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " writes it. "
+        },
+        {
+          "insert": "useRoute",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " pushes a history entry for each new address, so a reload restores the selection and the back button returns to the last one."
+        }
+      ],
       "children": []
     },
     "sm-ui-shell": {
