@@ -43,6 +43,32 @@ describe("the page routes", () => {
     expect(parseRoute("/sessions")).toEqual({ page: "actions" });
   });
 
+  test("keep the selected node and call of a Session in the query, with ids that hold colons and slashes", () => {
+    const sessionId = "ses_01JZ8Q4V6X2M9R3T5W7Y1A3C5E";
+    const call = "0f0e0d0c-0b0a-4908-8706-050403020100";
+    const routes: Route[] = [
+      { page: "session", sessionId, node: { kind: "thread", id: "11111111-aaaa-4aaa-8aaa-000000000001" } },
+      { page: "session", sessionId, node: { kind: "conversation", id: "claude:22222222/agent-a8b7" }, call },
+      { page: "session", sessionId, node: { kind: "thread", id: "thread:delegated-task:command%3Amcp%3A51" } },
+    ];
+    for (const route of routes) {
+      const path = routePath(route);
+      const [pathname, search] = path.split("?");
+      expect(pathname).toBe(`/sessions/${sessionId}`);
+      expect(parseRoute(pathname!, `?${search}`)).toEqual(route);
+    }
+    expect(routePath(routes[1]!)).toBe(`/sessions/${sessionId}?node=conversation%3Aclaude%3A22222222%2Fagent-a8b7&call=${call}`);
+  });
+
+  test("read a Session query value that breaks its rule as not set", () => {
+    const sessionId = "ses_01JZ8Q4V6X2M9R3T5W7Y1A3C5E";
+    expect(parseRoute(`/sessions/${sessionId}`, "?node=planet:x&call=0f0e0d0c-0b0a-4908-8706-050403020100")).toEqual({ page: "session", sessionId });
+    expect(parseRoute(`/sessions/${sessionId}`, "?node=thread:t1&call=not-a-uuid")).toEqual({ page: "session", sessionId, node: { kind: "thread", id: "t1" } });
+    expect(parseRoute(`/sessions/${sessionId}`, "?call=0f0e0d0c-0b0a-4908-8706-050403020100")).toEqual({ page: "session", sessionId });
+    // Local mode has no Session pages: a Session route with a selection still shows the Action log.
+    expect(localRoute(parseRoute(`/sessions/${sessionId}`, "?node=thread:t1"))).toEqual({ page: "actions" });
+  });
+
   test("show the Work tab in server mode for the pages it does not have, and keep the run page", () => {
     expect(serverRoute(parseRoute("/"))).toEqual({ page: "work" });
     expect(serverRoute(parseRoute("/traces/canvas"))).toEqual({ page: "work" });

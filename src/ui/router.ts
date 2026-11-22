@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { SidebarRoute } from "@codecaine-ai/agent-kernel-viewer-shell";
+import { parseSessionQuery, sessionQuery, type SidebarRoute } from "@codecaine-ai/agent-kernel-viewer-shell";
 
 /**
  * The Observatory pages.
@@ -8,7 +8,8 @@ import type { SidebarRoute } from "@codecaine-ai/agent-kernel-viewer-shell";
  *   /traces/:projectId      the kernel Traces page (local mode)
  *   /runs/:engine/:runId    the engine Runs page (both modes)
  *   /work                   the Work tab: the Sessions and the nodes with no parent
- *   /sessions/:sessionId    one Session as a tree
+ *   /sessions/:sessionId    one Session as a tree; ?node=<kind>:<id>&call=<callId>
+ *                           holds the selected node and call
  *   /workflows              the Workflows tab: the workflow runs by workflow
  */
 export type Route =
@@ -17,11 +18,15 @@ export type Route =
   | { page: "runs"; run: { engine: string; runId: string } | null }
   | SidebarRoute;
 
-export function parseRoute(pathname: string): Route {
+/** The route of a URL. `search` is the query, such as `?node=thread:t1`; only a Session route reads it. */
+export function parseRoute(pathname: string, search = ""): Route {
   if (/^\/work\/?$/.test(pathname)) return { page: "work" };
   if (/^\/workflows\/?$/.test(pathname)) return { page: "workflows" };
   const session = /^\/sessions\/([^/]+)\/?$/.exec(pathname);
-  if (session?.[1]) return { page: "session", sessionId: decodeSegment(session[1]) };
+  if (session?.[1]) {
+    const { node, call } = parseSessionQuery(search);
+    return { page: "session", sessionId: decodeSegment(session[1]), ...(node ? { node } : {}), ...(call ? { call } : {}) };
+  }
   const runs = /^\/runs(?:\/([^/]+)\/([^/]+))?\/?$/.exec(pathname);
   if (runs) {
     return {
@@ -73,7 +78,7 @@ export function routePath(route: Route): string {
   if (route.page === "actions") return "/";
   if (route.page === "work") return "/work";
   if (route.page === "workflows") return "/workflows";
-  if (route.page === "session") return `/sessions/${encodeURIComponent(route.sessionId)}`;
+  if (route.page === "session") return `/sessions/${encodeURIComponent(route.sessionId)}${sessionQuery(route)}`;
   if (route.page === "runs") {
     return route.run
       ? `/runs/${encodeURIComponent(route.run.engine)}/${encodeURIComponent(route.run.runId)}`
@@ -108,21 +113,25 @@ export function isPlainLeftClick(event: ClickLike): boolean {
   );
 }
 
-/** Reads the route from the URL and keeps it in step with pushState and back/forward. */
+/**
+ * Reads the route from the URL and keeps it in step with pushState and
+ * back/forward. Each new address is a history entry, so on a Session page
+ * the back button walks the selection history.
+ */
 export function useRoute(): [Route, (next: Route) => void] {
   const [route, setRoute] = useState<Route>(() =>
-    parseRoute(window.location.pathname),
+    parseRoute(window.location.pathname, window.location.search),
   );
 
   useEffect(() => {
-    const onPopState = () => setRoute(parseRoute(window.location.pathname));
+    const onPopState = () => setRoute(parseRoute(window.location.pathname, window.location.search));
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
   const navigate = useCallback((next: Route) => {
     const path = routePath(next);
-    if (path !== window.location.pathname) {
+    if (path !== `${window.location.pathname}${window.location.search}`) {
       window.history.pushState(null, "", path);
     }
     setRoute(next);
