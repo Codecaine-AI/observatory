@@ -39,13 +39,14 @@ import {
  * In local mode the runs come from the home's archon.db. In server mode they
  * come from the trace ClickHouse, and the home gives only the kernel spans.
  *
- * Server mode also serves the 9 Session routes of the read service, read from
+ * Server mode also serves the 10 Session routes of the read service, read from
  * the same ClickHouse with the same read-only user:
  *
  *   GET /api/sessions                  the Session list, last active first, with a search
  *   GET /api/sessions/:sessionId/tree  one Session as a tree
- *   GET /api/node-calls?kind=&id=      the calls of one node, 100 for each page, with
- *                                      their summaries and child nodes
+ *   GET /api/node-calls?kind=&id=      100 calls of one node, with their summaries and child
+ *                                      nodes: the first ones, or after, from or before a
+ *                                      cursor, or around one call (&call=)
  *   GET /api/calls/:callId             the content of one call; ?recent=N for the newest
  *                                      N messages and the answer first
  *   GET /api/calls/:callId/messages?from=&to=

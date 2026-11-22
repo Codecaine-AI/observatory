@@ -17,14 +17,16 @@ Caddy sends only `/api/*` and `/registry/*` to the API. It serves every other pa
 | `GET /registry/projects` | `{"projects":[]}` |
 | `GET /api/engine-runs` and its 2 sub-routes | The workflow engine runs and their calls |
 | `GET /api/archon-home/kernel/*` | The kernel trace routes on the home's `.agent-kernel/trace.db` |
-| `GET /api/sessions` | The Session list, last active first. Filters: `from`, `to`, `machine`, `harness`, `phase` |
+| `GET /api/sessions` | The Session list, last active first, at most 2,000. Filters: `from`, `to`, `machine`, `harness`, `phase`, `search` |
 | `GET /api/sessions/:sessionId/tree` | One Session as a tree of its nodes |
-| `GET /api/node-calls?kind=&id=&page=` | The calls of one node, 100 for each page |
+| `GET /api/node-calls?kind=&id=` | 100 calls of one node: the first ones, or `after=`, `from=` or `before=` a cursor, or around one call with `call=`. `session=` answers 404 for a node of another Session |
 | `GET /api/calls/:callId` | The prompt, answer and usage of one call. `?recent=N` gives the newest N messages and the answer first |
 | `GET /api/calls/:callId/messages?from=&to=` | The older history of one call, at most 500 messages for each page |
 | `GET /api/orphans` | The nodes with no parent, and the count of calls with no node |
+| `GET /api/unlinked-calls` | The calls with no node, grouped by cause |
+| `GET /api/engine-runs/:engine/:runId/session` | The run node of a workflow run and its Session |
 | `GET /api/status` | The age of each source and each collector heartbeat |
-| `GET /api/workflows` | The workflow runs, grouped by workflow |
+| `GET /api/workflows` | The workflow runs, grouped by workflow, from the newest 5,000 |
 
 The UI in server mode has a left sidebar with Work and Workflows:
 
