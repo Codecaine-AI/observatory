@@ -54,7 +54,7 @@
           }
         },
         {
-          "insert": ", the API mounts no route that writes, runs a command, or reaches a registry project. It reads the engine runs and the Session trees from the trace ClickHouse, and the UI shows a Work and Workflows sidebar. This page gives what server mode turns off, the settings of the services-01 LaunchAgent, what stays on, and the server mode UI."
+          "insert": ", the API mounts no route that writes, runs a command, or reaches a registry project. It reads the engine runs and the Session trees from the trace ClickHouse, and the UI shows a sidebar with Work, Orphans, Unlinked calls and Workflows. This page gives what server mode turns off, the settings of the services-01 LaunchAgent, what stays on, and the server mode UI."
         }
       ],
       "children": []
@@ -1710,9 +1710,36 @@
                 "attributes": {
                   "code": true
                 }
+              },
+              {
+                "insert": " and its query "
+              },
+              {
+                "insert": "search",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "phase",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "machine",
+                "attributes": {
+                  "code": true
+                }
               }
             ],
-            "The Work tab: the Session list, then the nodes with no parent",
+            "The Work tab: the Session list with a search box and the phase and machine filters",
             "The Action log"
           ],
           [
@@ -1748,6 +1775,30 @@
           [
             [
               {
+                "insert": "/orphans",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The nodes with calls and no parent edge, by group, and a link to the Unlinked calls page",
+            "The Action log"
+          ],
+          [
+            [
+              {
+                "insert": "/unlinked-calls",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The calls that join no node, grouped by cause. A click on a call opens its body.",
+            "The Action log"
+          ],
+          [
+            [
+              {
                 "insert": "/workflows",
                 "attributes": {
                   "code": true
@@ -1766,21 +1817,8 @@
                 }
               }
             ],
-            [
-              {
-                "insert": "The Runs page under a topbar with a "
-              },
-              {
-                "insert": "Workflows",
-                "attributes": {
-                  "bold": true
-                }
-              },
-              {
-                "insert": " link back"
-              }
-            ],
-            "The Runs page"
+            "The Runs page in the sidebar shell, under Workflows. The heading and the tab title name the run. Its header shows the UTC start time and a link to the Session that holds the run.",
+            "The Runs page with the project sidebar. Its times show in UTC."
           ]
         ],
         "title": "Pages in each mode"
@@ -1793,7 +1831,16 @@
       "props": {},
       "text": [
         {
-          "insert": "The Session route holds the selected node and call in its query, "
+          "insert": "The Work route holds its search and filters as "
+        },
+        {
+          "insert": "?search=<text>&phase=<phase>&machine=<machine>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The Session route holds the selected node and call as "
         },
         {
           "insert": "?node=<kind>:<id>&call=<callId>",
@@ -1825,7 +1872,7 @@
           }
         },
         {
-          "insert": " reads it and "
+          "insert": " reads each query and "
         },
         {
           "insert": "routePath",
@@ -1843,7 +1890,7 @@
           }
         },
         {
-          "insert": " pushes a history entry for each new address, so a reload restores the selection and the back button returns to the last one."
+          "insert": " pushes a history entry for each new address, so a reload restores the filters and the selection, and the back button returns to the last one."
         }
       ],
       "children": []
@@ -1901,7 +1948,43 @@
           }
         },
         {
-          "insert": "."
+          "insert": ", and "
+        },
+        {
+          "insert": "ServerApp",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " draws that Runs page in the shell through "
+        },
+        {
+          "insert": "hostPage",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". "
+        },
+        {
+          "insert": "runSessionRoute",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " turns the answer of "
+        },
+        {
+          "insert": "GET /api/engine-runs/:engine/:runId/session",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " into the Session link, with the run node selected. No link shows when no Session holds the run."
         }
       ],
       "children": []

@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   reviveEngineRun,
   type EngineRunListResponse,
 } from "@codecaine-ai/agent-kernel-viewer-read-service/wire";
 import {
   KernelTraceWorkspace,
+  usePageTitle,
   type TraceWorkspaceRow,
 } from "@codecaine-ai/agent-kernel-viewer-shell";
+import { UtcTime, formatDetailTime, formatLocalTime } from "@codecaine-ai/agent-kernel-viewer-ui";
 
 import {
   ARCHON_HOME_KERNEL_PREFIX,
@@ -25,6 +27,8 @@ interface RunsPageProps {
   /** The open run, from the route; null shows the list. */
   run: EngineRunRef | null;
   onOpen: (run: EngineRunRef | null) => void;
+  /** More of the open run's header, such as a link to its Session in server mode. */
+  detailExtras?: (run: EngineRunRef) => ReactNode;
 }
 
 type ListState =
@@ -50,7 +54,7 @@ const rowId = (run: EngineRunRef): string => `${run.engine}/${run.runId}`;
  * The engine runs of the Archon home, newest first, and one run as a tree
  * with the detail panel: the same workspace as the kernel Traces page.
  */
-export function RunsPage({ run, onOpen }: RunsPageProps) {
+export function RunsPage({ run, onOpen, detailExtras }: RunsPageProps) {
   const [listState, setListState] = useState<ListState>({ status: "loading", runs: [] });
   const [runState, setRunState] = useState<RunState>({ status: "idle" });
   // A run keeps changing after it starts: its status, and gateway rows that
@@ -114,6 +118,7 @@ export function RunsPage({ run, onOpen }: RunsPageProps) {
         id: rowId(summary),
         title: summary.workflowName ?? summary.runId,
         subtitle: runSubtitle(summary),
+        subtitleTitle: summary.startedAt ? formatLocalTime(summary.startedAt) : undefined,
         status: summary.status ?? "unknown",
         badge: summary.engine,
       })),
@@ -129,6 +134,20 @@ export function RunsPage({ run, onOpen }: RunsPageProps) {
           subtitle: runSubtitle(runState.run),
         }
       : null;
+
+  // The heading and the tab title name the open run, else the list.
+  usePageTitle(detail?.title ?? (run ? "Workflow run" : "Engine runs"), "Observatory");
+  const shown = runState.status === "ready" ? runState.run : null;
+  const headerExtras = shown ? (
+    <span className="flex min-w-0 items-center gap-3">
+      {detailExtras && run ? detailExtras(run) : null}
+      {shown.startedAt ? (
+        <span data-run-started="" className="whitespace-nowrap font-mono text-(length:--ds-font-size-ui-xs) text-muted-foreground">
+          started <UtcTime iso={shown.startedAt} withSeconds /> UTC
+        </span>
+      ) : null}
+    </span>
+  ) : undefined;
 
   const errorText =
     listState.status === "error"
@@ -157,6 +176,7 @@ export function RunsPage({ run, onOpen }: RunsPageProps) {
         onBack={() => onOpen(null)}
         apiBase={ARCHON_HOME_KERNEL_PREFIX}
         engineApiBase={ENGINE_RUNS_API_PREFIX}
+        detailHeaderExtras={headerExtras}
         labels={{
           listTitle: "Engine runs",
           countNoun: "run",
@@ -170,18 +190,14 @@ export function RunsPage({ run, onOpen }: RunsPageProps) {
   );
 }
 
-/** `run c5993f42 · 2026-11-17 11:53:37`: the short run id and the local start time. */
-export function runSubtitle(run: EngineRunSummary): string {
+/**
+ * `run c5993f42 · 2026-11-17 11:53:37 UTC`: the short run id and the start
+ * time in UTC, in both modes. The row's hover title gives the local time.
+ */
+export function runSubtitle(run: Pick<EngineRunSummary, "runId" | "startedAt">): string {
   const pieces = [`run ${run.runId.slice(0, 8)}`];
-  if (run.startedAt) pieces.push(formatLocalTime(run.startedAt));
+  if (run.startedAt) pieces.push(formatDetailTime(run.startedAt));
   return pieces.join(" · ");
-}
-
-function formatLocalTime(iso: string): string {
-  const date = new Date(iso);
-  if (!Number.isFinite(date.getTime())) return iso;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
 function errorMessage(cause: unknown, fallback: string): string {

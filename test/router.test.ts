@@ -43,6 +43,29 @@ describe("the page routes", () => {
     expect(parseRoute("/sessions")).toEqual({ page: "actions" });
   });
 
+  test("keep the search and filters of Work in the query, so a reload and the back button restore them", () => {
+    const route: Route = { page: "work", filter: { search: "Session Trees", phase: "run", machine: "dev-01" } };
+    const path = routePath(route);
+    expect(path).toBe("/work?search=Session+Trees&phase=run&machine=dev-01");
+    const [pathname, search] = path.split("?");
+    expect(parseRoute(pathname!, `?${search}`)).toEqual(route);
+    // A value the read service would refuse reads as not set.
+    expect(parseRoute("/work", "?phase=a%20b&machine=dev-01")).toEqual({ page: "work", filter: { machine: "dev-01" } });
+    expect(parseRoute("/work", "?search=")).toEqual({ page: "work" });
+  });
+
+  test("read and write the Orphans and Unlinked calls pages, which only server mode has", () => {
+    for (const [path, route] of [
+      ["/orphans", { page: "orphans" }],
+      ["/unlinked-calls", { page: "unlinked-calls" }],
+    ] as [string, Route][]) {
+      expect(parseRoute(path)).toEqual(route);
+      expect(routePath(route)).toBe(path);
+      expect(serverRoute(route) as Route).toEqual(route);
+      expect(localRoute(route)).toEqual({ page: "actions" });
+    }
+  });
+
   test("keep the selected node and call of a Session in the query, with ids that hold colons and slashes", () => {
     const sessionId = "ses_01JZ8Q4V6X2M9R3T5W7Y1A3C5E";
     const call = "0f0e0d0c-0b0a-4908-8706-050403020100";
