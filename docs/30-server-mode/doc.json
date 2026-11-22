@@ -25,12 +25,14 @@
         "sm-h-keep",
         "sm-keep-lead",
         "sm-keep",
+        "sm-keep-calls",
         "sm-keep-reader",
         "sm-keep-diff",
         "sm-h-queue",
         "sm-queue-lead",
-        "sm-queue-1",
-        "sm-queue-2",
+        "sm-queue-g-slots",
+        "sm-queue-g-abort",
+        "sm-queue-g-full",
         "sm-h-ui",
         "sm-ui-lead",
         "sm-ui-retry",
@@ -1372,6 +1374,59 @@
       },
       "children": []
     },
+    "sm-keep-calls": {
+      "id": "sm-keep-calls",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "GET /api/node-calls",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " reads 100 calls of a node by cursor: the first ones, the ones "
+        },
+        {
+          "insert": "after",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "from",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "before",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " a cursor, or the ones around a "
+        },
+        {
+          "insert": "call",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The Read Service page of the trace-viewer docs gives the cursor rule and the answer."
+        }
+      ],
+      "children": []
+    },
     "sm-keep-reader": {
       "id": "sm-keep-reader",
       "type": "paragraph",
@@ -1517,6 +1572,26 @@
       ],
       "children": []
     },
+    "sm-queue-g-slots": {
+      "id": "sm-queue-g-slots",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Slots",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "sm-queue-1",
+        "sm-queue-1b",
+        "sm-queue-1c"
+      ]
+    },
     "sm-queue-1": {
       "id": "sm-queue-1",
       "type": "list-item",
@@ -1534,10 +1609,56 @@
           }
         },
         {
-          "insert": ", 2, queries run at a time, in the order they came. A query keeps its slot until its answer body is read, and a waiting query takes the slot of the query that ends."
+          "insert": ", 2, queries run at a time, in the order they came."
         }
       ],
       "children": []
+    },
+    "sm-queue-1b": {
+      "id": "sm-queue-1b",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "A query keeps its slot until its answer body is read, and a waiting query takes the slot of the query that ends."
+        }
+      ],
+      "children": []
+    },
+    "sm-queue-1c": {
+      "id": "sm-queue-1c",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "The read service still retries an error 202 that another client causes."
+        }
+      ],
+      "children": []
+    },
+    "sm-queue-g-abort": {
+      "id": "sm-queue-g-abort",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Requests That End Early",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "sm-queue-2",
+        "sm-queue-2b",
+        "sm-queue-2c"
+      ]
     },
     "sm-queue-2": {
       "id": "sm-queue-2",
@@ -1547,7 +1668,96 @@
       },
       "text": [
         {
-          "insert": "A waiting query whose request is aborted leaves the queue and rejects with the reason of its signal. The read service still retries an error 202 that another client causes."
+          "insert": "Each query carries the signal of the HTTP request that asked for it, joined with the read service's timeout."
+        }
+      ],
+      "children": []
+    },
+    "sm-queue-2b": {
+      "id": "sm-queue-2b",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "When the request ends early, a waiting query leaves the queue and rejects with the reason of the signal."
+        }
+      ],
+      "children": []
+    },
+    "sm-queue-2c": {
+      "id": "sm-queue-2c",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "A running query stops too: its HTTP request to ClickHouse aborts, and ClickHouse cancels the query."
+        }
+      ],
+      "children": []
+    },
+    "sm-queue-g-full": {
+      "id": "sm-queue-g-full",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "A Full Queue",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "sm-queue-3",
+        "sm-queue-3b"
+      ]
+    },
+    "sm-queue-3": {
+      "id": "sm-queue-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "At most "
+        },
+        {
+          "insert": "MAX_WAITING_QUERIES",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", 64, queries wait."
+        }
+      ],
+      "children": []
+    },
+    "sm-queue-3b": {
+      "id": "sm-queue-3b",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "One more fails at once with "
+        },
+        {
+          "insert": "ClickHouseBusyError",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and the route answers 503 with its message."
         }
       ],
       "children": []
