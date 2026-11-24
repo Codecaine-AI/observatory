@@ -73,16 +73,24 @@ first, so the page says when it hit that cap. Filter to narrow it.
   `GET /api/node-calls?kind=&id=&page=`, `GET /api/calls/:callId`,
   `GET /api/calls/:callId/messages?from=&to=`, `GET /api/orphans`,
   `GET /api/unlinked-calls`, `GET /api/engine-runs/:engine/:runId/session`,
-  `GET /api/status` and `GET /api/workflows`.
+  `GET /api/status`, `GET /api/workflows` and
+  `GET /api/workflows/:name/source`.
   `deploy/services-01/README.md` lists what each one answers.
+- The workflow routes read the Archon home too: the bindings in
+  `<OBSERVATORY_ARCHON_HOME>/triggers`, and the YAML of the captured source
+  that each run's record names, through the home's `archon.db` (or the run rows
+  in ClickHouse when it has none). A workflow that ran on another host has no
+  description and no YAML here.
 - The call reads keep the blocks they fetch in 1 in-memory cache, with a budget
   of `OBSERVATORY_BLOCK_CACHE_MB` (default 256 MiB, 0 turns it off). A second
   open of a call, and the next call of a conversation, read most blocks from it.
 
 In server mode the UI shows a left sidebar with Work (`/work`, a Session at
-`/sessions/:sessionId`) and Workflows (`/workflows`). A run opens the Runs page
-at `/runs/:engine/:runId`. Local mode keeps the project sidebar and the 3
-pages above.
+`/sessions/:sessionId`) and Workflows (`/workflows`, one workflow at
+`/workflows?workflow=<name>`). Workflows holds every run: its All runs view
+replaces the run list, so `/runs` shows it. A run opens the Runs page at
+`/runs/:engine/:runId`, in a new tab from a runs table. Local mode keeps the
+project sidebar and the 3 pages above.
 
 ## Engine run settings
 
