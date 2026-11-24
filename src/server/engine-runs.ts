@@ -15,11 +15,13 @@ import { limitConcurrency, MAX_CLICKHOUSE_QUERIES } from "./query-limit";
 import {
   DEFAULT_BLOCK_CACHE_BYTES,
   createArchonHomeReader,
+  createArchonWorkflowCatalog,
   createBlockCache,
   createClickHouseReader,
   createEngineRunRoutes,
   createSessionReader,
   createSessionRoutes,
+  isTimeZone,
   type GatewayAdapterOptions,
 } from "@codecaine-ai/agent-kernel-viewer-read-service";
 
@@ -56,7 +58,16 @@ import {
  *   GET /api/engine-runs/:engine/:runId/session
  *                                      the run node of a run and its Session
  *   GET /api/status                    the age of each source
- *   GET /api/workflows                 the workflow runs by workflow
+ *   GET /api/workflows                 the workflow runs by workflow, each with its domain,
+ *                                      description and Archon binding
+ *   GET /api/workflows/:name/source    the YAML of one workflow from a captured source
+ *
+ * The workflow facts come from the Archon home: the bindings of
+ * `<archonHome>/triggers`, and the YAML of the captured source that each
+ * run's record names, found through the home's archon.db, or through the
+ * run rows in ClickHouse when the home has no archon.db. The captured
+ * sources are folders of this host, so a workflow that ran on another host
+ * has no description and no YAML.
  *
  * The call reads of both route sets share 1 block cache, with the byte budget
  * of OBSERVATORY_BLOCK_CACHE_MB.
@@ -78,6 +89,8 @@ export interface EngineRunSettings {
   gateway: GatewayAdapterOptions | null;
   /** The byte budget of the call block cache. Default `DEFAULT_BLOCK_CACHE_BYTES` (256 MiB); 0 turns it off. */
   blockCacheBytes?: number;
+  /** The IANA time zone of the Archon host's schedules. Default: this process's. */
+  hostTimeZone?: string;
 }
 
 const MIB = 1024 * 1024;
@@ -117,11 +130,19 @@ export function observatoryModeFromEnv(env: Env = Bun.env): ObservatoryMode {
  *   TRACES_SQL_USER          default traces_ro
  *   OBSERVATORY_BLOCK_CACHE_MB
  *                            the budget of the call block cache in MiB, default 256; 0 turns it off
+ *   OBSERVATORY_HOST_TIME_ZONE
+ *                            the IANA time zone of the Archon schedules, such as America/Chicago;
+ *                            default the zone of this process
  */
 export function engineRunSettingsFromEnv(env: Env = Bun.env): EngineRunSettings {
   const home = env.OBSERVATORY_ARCHON_HOME?.trim();
   const password = env.TRACES_SQL_PASSWORD ?? "";
+  const hostTimeZone = env.OBSERVATORY_HOST_TIME_ZONE?.trim() ?? "";
+  if (hostTimeZone !== "" && !isTimeZone(hostTimeZone)) {
+    throw new Error(`OBSERVATORY_HOST_TIME_ZONE must be an IANA time zone such as America/Chicago, not ${JSON.stringify(hostTimeZone)}`);
+  }
   return {
+    ...(hostTimeZone ? { hostTimeZone } : {}),
     archonHome: home ? resolve(home) : join(homedir(), ".archon"),
     blockCacheBytes: blockCacheBytesFromEnv(env),
     gateway:
@@ -184,7 +205,11 @@ export function createEngineRunPlugins(
   if (mode === "server") {
     if (!gateway) throw new Error("Server mode needs TRACES_SQL_PASSWORD: its runs come from ClickHouse");
     reader = createClickHouseReader(gateway, { kernelDbPath: kernelDatabase.dbPath });
-    sessions = createSessionRoutes(createSessionReader(gateway), { prefix: ENGINE_RUNS_API_PREFIX });
+    const workflowCatalog = createArchonWorkflowCatalog(settings.archonHome, {
+      clickhouse: gateway,
+      ...(settings.hostTimeZone ? { hostTimeZone: settings.hostTimeZone } : {}),
+    });
+    sessions = createSessionRoutes(createSessionReader({ ...gateway, workflowCatalog }), { prefix: ENGINE_RUNS_API_PREFIX });
   } else {
     reader = createArchonHomeReader(settings.archonHome, gateway ? { gateway } : {});
   }

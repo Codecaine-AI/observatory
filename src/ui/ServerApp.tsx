@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { SidebarShell, type RunTarget } from "@codecaine-ai/agent-kernel-viewer-shell";
 import { SESSION_READ_PATHS, type RunSessionAnswer } from "@codecaine-ai/agent-kernel-viewer-core";
 import { isPlainClick, useJsonResource } from "@codecaine-ai/agent-kernel-viewer-ui";
@@ -41,11 +42,16 @@ const runRoute = (run: RunTarget): Route => ({ page: "runs", run });
  * Workflows render in the viewer-shell sidebar shell, which reads the
  * Session routes under /api. A run opens the Runs page at
  * /runs/:engine/:runId inside the same shell, under the Workflows item, and
- * links back to the Session that holds the run.
+ * links back to the Session that holds the run. The Workflows tab lists
+ * every run, so the run list address `/runs` becomes `/workflows`.
  */
 export function ServerApp({ theme, onToggleTheme }: ServerAppProps) {
   const [route, navigate] = useRoute();
   const page = serverRoute(route);
+  const toAllRuns = route.page === "runs" && route.run === null;
+  useEffect(() => {
+    if (toAllRuns) window.history.replaceState(window.history.state, "", `${routePath({ page: "workflows" })}${window.location.hash}`);
+  }, [toAllRuns]);
   const nextTheme = theme === "dark" ? "light" : "dark";
   // The theme switch sits at the foot of the sidebar, as a nav row: the icon shows the theme it switches to.
   const themeButton = (
@@ -82,13 +88,13 @@ export function ServerApp({ theme, onToggleTheme }: ServerAppProps) {
           isRun
             ? {
                 item: "workflows",
-                title: page.run ? "Workflow run" : "Engine runs",
+                title: "Workflow run",
                 fill: true,
                 content: (
                   <div className="flex min-h-0 flex-1 flex-col p-4" data-trace-shell="run">
                     <RunsPage
                       run={page.run}
-                      onOpen={(next) => navigate({ page: "runs", run: next })}
+                      onOpen={(next) => navigate(next ? { page: "runs", run: next } : { page: "workflows" })}
                       detailExtras={(run) => <RunSessionLink run={run} navigate={navigate} />}
                     />
                   </div>

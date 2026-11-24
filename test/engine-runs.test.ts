@@ -75,6 +75,12 @@ describe("engine run settings", () => {
     expect(engineRunSettingsFromEnv({ OBSERVATORY_ARCHON_HOME: "/data/archon" }).archonHome).toBe("/data/archon");
   });
 
+  test("read the time zone of the Archon schedules from OBSERVATORY_HOST_TIME_ZONE, and refuse a name that is not one", () => {
+    expect(engineRunSettingsFromEnv({}).hostTimeZone).toBeUndefined();
+    expect(engineRunSettingsFromEnv({ OBSERVATORY_HOST_TIME_ZONE: "America/Chicago" }).hostTimeZone).toBe("America/Chicago");
+    expect(() => engineRunSettingsFromEnv({ OBSERVATORY_HOST_TIME_ZONE: "Mars/Olympus" })).toThrow("OBSERVATORY_HOST_TIME_ZONE");
+  });
+
   test.each([
     [{}, 256 * 1024 * 1024],
     [{ OBSERVATORY_BLOCK_CACHE_MB: "64" }, 64 * 1024 * 1024],
