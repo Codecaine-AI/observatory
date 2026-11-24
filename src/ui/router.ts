@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { parseSessionQuery, parseWorkQuery, sessionQuery, workQuery, type SidebarRoute } from "@codecaine-ai/agent-kernel-viewer-shell";
+import { parseSessionQuery, parseTokensQuery, parseWorkQuery, sessionQuery, tokensQuery, workQuery, type SidebarRoute } from "@codecaine-ai/agent-kernel-viewer-shell";
 
 /**
  * The Observatory pages.
@@ -14,6 +14,7 @@ import { parseSessionQuery, parseWorkQuery, sessionQuery, workQuery, type Sideba
  *   /orphans                the nodes with no parent edge whose subtree has calls
  *   /unlinked-calls         the calls that join no node, grouped by cause
  *   /workflows              the Workflows tab: the workflow runs by workflow
+ *   /tokens                 the Tokens tab: the token use by model; ?range=1d|30d|all holds the range (7d is the default)
  */
 export type Route =
   | { page: "actions" }
@@ -28,6 +29,10 @@ export function parseRoute(pathname: string, search = ""): Route {
     return Object.keys(filter).length > 0 ? { page: "work", filter } : { page: "work" };
   }
   if (/^\/workflows\/?$/.test(pathname)) return { page: "workflows" };
+  if (/^\/tokens\/?$/.test(pathname)) {
+    const range = parseTokensQuery(search);
+    return range ? { page: "tokens", range } : { page: "tokens" };
+  }
   if (/^\/orphans\/?$/.test(pathname)) return { page: "orphans" };
   if (/^\/unlinked-calls\/?$/.test(pathname)) return { page: "unlinked-calls" };
   const session = /^\/sessions\/([^/]+)\/?$/.exec(pathname);
@@ -96,6 +101,7 @@ export function routePath(route: Route): string {
   if (route.page === "actions") return "/";
   if (route.page === "work") return `/work${workQuery(route.filter)}`;
   if (route.page === "workflows") return "/workflows";
+  if (route.page === "tokens") return `/tokens${tokensQuery(route.range)}`;
   if (route.page === "orphans") return "/orphans";
   if (route.page === "unlinked-calls") return "/unlinked-calls";
   if (route.page === "session") return `/sessions/${encodeURIComponent(route.sessionId)}${sessionQuery(route)}`;

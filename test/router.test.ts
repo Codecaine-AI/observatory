@@ -91,6 +91,21 @@ describe("the page routes", () => {
     }
   });
 
+  test("keep the range of the Tokens page in the query, leave out the default 7d, and read a range that is not one of the 4 as the default", () => {
+    for (const [path, route] of [
+      ["/tokens", { page: "tokens" }],
+      ["/tokens?range=1d", { page: "tokens", range: "1d" }],
+      ["/tokens?range=all", { page: "tokens", range: "all" }],
+    ] as [string, Route][]) {
+      const [pathname, search = ""] = path.split("?");
+      expect(parseRoute(pathname!, search ? `?${search}` : "")).toEqual(route);
+      expect(routePath(route)).toBe(path);
+      expect(serverRoute(route) as Route).toEqual(route);
+    }
+    expect(routePath({ page: "tokens", range: "7d" })).toBe("/tokens");
+    expect(parseRoute("/tokens", "?range=90d")).toEqual({ page: "tokens" });
+  });
+
   test("keep the selected node and call of a Session in the query, with ids that hold colons and slashes", () => {
     const sessionId = "ses_01JZ8Q4V6X2M9R3T5W7Y1A3C5E";
     const call = "0f0e0d0c-0b0a-4908-8706-050403020100";
