@@ -64,6 +64,16 @@ describe("the page routes", () => {
     expect(clean("/work", "?machine=nope-99")).toBeNull();
     expect(clean("/work", "?search=trace&phase=done")).toBeNull();
     expect(clean("/sessions/ses_01JZ8Q4V6X2M9R3T5W7Y1A3C5E", "?node=zzz")).toBeNull();
+    // A Workflows address with a name that breaks the rule shows All runs.
+    expect(clean("/workflows", "?workflow=..%2Fetc")).toBe("/workflows");
+    expect(clean("/workflows", "?workflow=budget-nightly")).toBeNull();
+  });
+
+  test("keep the selected workflow of the Workflows tab in the query", () => {
+    const route: Route = { page: "workflows", workflow: "budget-nightly" };
+    expect(routePath(route)).toBe("/workflows?workflow=budget-nightly");
+    expect(parseRoute("/workflows", "?workflow=budget-nightly")).toEqual(route);
+    expect(parseRoute("/workflows", "?workflow=")).toEqual({ page: "workflows" });
   });
 
   test("name each local page in the tab, and leave the Runs page to name itself", () => {
@@ -138,6 +148,11 @@ describe("the page routes", () => {
     expect(serverRoute(parseRoute("/nowhere"))).toEqual({ page: "work" });
     expect(serverRoute(parseRoute("/workflows"))).toEqual({ page: "workflows" });
     expect(serverRoute(parseRoute("/runs/archon/c5993f42-7c8b"))).toEqual({ page: "runs", run: { engine: "archon", runId: "c5993f42-7c8b" } });
+  });
+
+  test("show All runs of the Workflows tab in server mode for the run list, which the Workflows tab replaces", () => {
+    expect(serverRoute(parseRoute("/runs"))).toEqual({ page: "workflows" });
+    expect(serverRoute(parseRoute("/runs/"))).toEqual({ page: "workflows" });
   });
 
   test("show the Action log in local mode for the Session pages, and keep its own pages", () => {

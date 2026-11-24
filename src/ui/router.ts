@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { parseSessionQuery, parseTokensQuery, parseWorkQuery, sessionQuery, tokensQuery, workQuery, type SidebarRoute } from "@codecaine-ai/agent-kernel-viewer-shell";
+import { parseSessionQuery, parseTokensQuery, parseWorkQuery, parseWorkflowsQuery, sessionQuery, tokensQuery, workQuery, workflowsQuery, type SidebarRoute } from "@codecaine-ai/agent-kernel-viewer-shell";
 
 /**
  * The Observatory pages.
@@ -7,13 +7,14 @@ import { parseSessionQuery, parseTokensQuery, parseWorkQuery, sessionQuery, toke
  *   /                       the Action log (local mode), the Work tab (server mode)
  *   /traces/:projectId      the kernel Traces page (local mode)
  *   /runs/:engine/:runId    the engine Runs page (both modes)
+ *   /runs                   the engine run list (local mode); server mode shows All runs of the Workflows tab
  *   /work                   the Work tab: the Sessions; ?search=<text>&phase=<phase>&machine=<machine>
  *                           holds the search and the filters
  *   /sessions/:sessionId    one Session as a tree; ?node=<kind>:<id>&call=<callId>
  *                           holds the selected node and call
  *   /orphans                the nodes with no parent edge whose subtree has calls
  *   /unlinked-calls         the calls that join no node, grouped by cause
- *   /workflows              the Workflows tab: the workflow runs by workflow
+ *   /workflows              the Workflows tab: All runs; ?workflow=<name> selects one workflow
  *   /tokens                 the Tokens tab: the token use by model; ?range=1d|30d|all holds the range (7d is the default)
  */
 export type Route =
@@ -28,7 +29,10 @@ export function parseRoute(pathname: string, search = ""): Route {
     const filter = parseWorkQuery(search);
     return Object.keys(filter).length > 0 ? { page: "work", filter } : { page: "work" };
   }
-  if (/^\/workflows\/?$/.test(pathname)) return { page: "workflows" };
+  if (/^\/workflows\/?$/.test(pathname)) {
+    const workflow = parseWorkflowsQuery(search);
+    return workflow ? { page: "workflows", workflow } : { page: "workflows" };
+  }
   if (/^\/tokens\/?$/.test(pathname)) {
     const range = parseTokensQuery(search);
     return range ? { page: "tokens", range } : { page: "tokens" };
@@ -75,9 +79,12 @@ function decodeSegment(segment: string): string {
 /**
  * The page that server mode shows for a route. Server mode has no Action log
  * and no Traces page, so `/`, `/traces` and an unknown path show the Work tab.
+ * The Workflows tab holds every run, so the run list `/runs` shows its All
+ * runs; one run keeps its page.
  */
-export function serverRoute(route: Route): SidebarRoute | Extract<Route, { page: "runs" }> {
+export function serverRoute(route: Route): SidebarRoute | { page: "runs"; run: { engine: string; runId: string } } {
   if (route.page === "actions" || route.page === "traces") return { page: "work" };
+  if (route.page === "runs") return route.run ? { page: "runs", run: route.run } : { page: "workflows" };
   return route;
 }
 
@@ -100,7 +107,7 @@ export function localPageTitle(route: Exclude<Route, SidebarRoute>, projectName:
 export function routePath(route: Route): string {
   if (route.page === "actions") return "/";
   if (route.page === "work") return `/work${workQuery(route.filter)}`;
-  if (route.page === "workflows") return "/workflows";
+  if (route.page === "workflows") return `/workflows${workflowsQuery(route.workflow)}`;
   if (route.page === "tokens") return `/tokens${tokensQuery(route.range)}`;
   if (route.page === "orphans") return "/orphans";
   if (route.page === "unlinked-calls") return "/unlinked-calls";
@@ -140,13 +147,13 @@ export function isPlainLeftClick(event: ClickLike): boolean {
 }
 
 /**
- * The address to write in place of a Work address whose query holds a value
- * the page drops (such as `?phase=bogus`), so the address shows the filter
- * that applies. Null when the address is already clean, and for every other
+ * The address to write in place of a Work or Workflows address whose query
+ * holds a value the page drops (such as `?phase=bogus`), so the address shows
+ * the filter or the selection that applies. Null when the address is already clean, and for every other
  * page.
  */
 export function cleanAddress(route: Route, pathname: string, search: string): string | null {
-  if (route.page !== "work") return null;
+  if (route.page !== "work" && route.page !== "workflows") return null;
   const path = routePath(route);
   return path === `${pathname}${search}` ? null : path;
 }
