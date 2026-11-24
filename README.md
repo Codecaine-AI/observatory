@@ -79,8 +79,10 @@ first, so the page says when it hit that cap. Filter to narrow it.
 - The workflow routes read the Archon home too: the bindings in
   `<OBSERVATORY_ARCHON_HOME>/triggers`, and the YAML of the captured source
   that each run's record names, through the home's `archon.db` (or the run rows
-  in ClickHouse when it has none). A workflow that ran on another host has no
-  description and no YAML here.
+  in ClickHouse when it has none). Only a capture inside
+  `<OBSERVATORY_ARCHON_HOME>/workspaces` is read, with no symbolic link
+  followed. A workflow that ran on another host has no description and no
+  YAML here.
 - The call reads keep the blocks they fetch in 1 in-memory cache, with a budget
   of `OBSERVATORY_BLOCK_CACHE_MB` (default 256 MiB, 0 turns it off). A second
   open of a call, and the next call of a conversation, read most blocks from it.
@@ -97,6 +99,7 @@ project sidebar and the 3 pages above.
 | Variable | Default | Meaning |
 |---|---|---|
 | `OBSERVATORY_ARCHON_HOME` | `~/.archon` | The Archon home to read |
+| `OBSERVATORY_HOST_TIME_ZONE` | the process's zone | The IANA time zone of the Archon schedules, for the next run of a workflow |
 | `TRACES_SQL_PASSWORD` | unset | Read-only ClickHouse password. Unset: the tree shows no calls and no counts |
 | `TRACES_SQL_URL` | `https://traces-sql.lascari.dev/` | The ClickHouse HTTP endpoint |
 | `TRACES_SQL_USER` | `traces_ro` | The read-only user |

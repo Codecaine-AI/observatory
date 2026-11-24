@@ -121,8 +121,8 @@ function serverApp() {
     join(directory, "triggers", "review.json"),
     JSON.stringify({ version: 1, binding: { bindingId: "review", hostId: "services-01", launch: { workflowName: "review" } }, schedule: { calendar: [{ hour: 3, minute: 15 }] } }),
   );
-  mkdirSync(join(directory, "capture", "project", ".archon", "workflows", "code"), { recursive: true });
-  writeFileSync(join(directory, "capture", "project", ".archon", "workflows", "code", "review.yaml"), "name: review\ndescription: Reviews a change.\n");
+  mkdirSync(join(directory, "workspaces", "capture", "project", ".archon", "workflows", "code"), { recursive: true });
+  writeFileSync(join(directory, "workspaces", "capture", "project", ".archon", "workflows", "code", "review.yaml"), "name: review\ndescription: Reviews a change.\n");
   const projectRequests: string[] = [];
   const clickHouseUsers: string[] = [];
   const clickHouseUrls: URL[] = [];
@@ -143,7 +143,7 @@ function serverApp() {
           clickHouseUrls.push(new URL(String(input)));
           const sql = String(init?.body);
           // The home has no archon.db, so the captured source roots come from ClickHouse.
-          if (sql.startsWith(WORKFLOW_ROOTS_SQL)) return new Response(jsonLines([{ workflow_name: "review", root: join(directory, "capture"), newest: "2026-11-17 10:00:00" }]));
+          if (sql.startsWith(WORKFLOW_ROOTS_SQL)) return new Response(jsonLines([{ workflow_name: "review", root: join(directory, "workspaces", "capture"), newest: "2026-11-17 10:00:00" }]));
           return new Response(clickHouseAnswer(sql));
         },
       },
