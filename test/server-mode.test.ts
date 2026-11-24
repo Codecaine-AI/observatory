@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -9,6 +9,8 @@ import {
   RUN_SESSION_SQL,
   SESSIONS_SQL,
   UNLINKED_CALL_GROUPS_SQL,
+  WORKFLOW_ROOTS_SQL,
+  WORKFLOW_RUNS_SQL,
 } from "@codecaine-ai/agent-kernel-viewer-read-service";
 
 import { createObservatoryApp, type ObservatoryApp } from "../src/server/app";
@@ -90,6 +92,13 @@ function clickHouseAnswer(sql: string): string {
       { kind: "row", ...SOURCE, snapshot_table: "remote_agent_workflow_events", raw: JSON.stringify(nodeRow("node_completed", 2)) },
     ]);
   }
+  if (sql.startsWith(WORKFLOW_RUNS_SQL)) {
+    return jsonLines([{
+      engine: "archon", run_id: "run-1", workflow_name: "review", status: "completed", machine: "services-01",
+      started_at: "2026-11-17 10:00:00.000", completed_at: "2026-11-17 10:00:05.000", node_found: 1, nodes: 1, calls: 1,
+      parent_kind: "", parent_id: "", parent_rule: "", parent_tier: "", parent_observed_at: null,
+    }]);
+  }
   if (sql.startsWith(RUN_CALLS_SQL)) {
     return jsonLines([{
       call_id: CALL_ID, response_id: "msg_1", engine: "archon", run_id: "run-1", node_path: "review",
@@ -106,6 +115,14 @@ function clickHouseAnswer(sql: string): string {
 function serverApp() {
   const directory = mkdtempSync(join(tmpdir(), "observatory-server-mode-"));
   directories.push(directory);
+  // The Archon home: one binding, and the captured source of run-1.
+  mkdirSync(join(directory, "triggers"));
+  writeFileSync(
+    join(directory, "triggers", "review.json"),
+    JSON.stringify({ version: 1, binding: { bindingId: "review", hostId: "services-01", launch: { workflowName: "review" } }, schedule: { calendar: [{ hour: 3, minute: 15 }] } }),
+  );
+  mkdirSync(join(directory, "capture", "project", ".archon", "workflows", "code"), { recursive: true });
+  writeFileSync(join(directory, "capture", "project", ".archon", "workflows", "code", "review.yaml"), "name: review\ndescription: Reviews a change.\n");
   const projectRequests: string[] = [];
   const clickHouseUsers: string[] = [];
   const clickHouseUrls: URL[] = [];
@@ -124,7 +141,10 @@ function serverApp() {
         fetch: async (input, init) => {
           clickHouseUsers.push(new Headers(init?.headers).get("authorization") ?? "");
           clickHouseUrls.push(new URL(String(input)));
-          return new Response(clickHouseAnswer(String(init?.body)));
+          const sql = String(init?.body);
+          // The home has no archon.db, so the captured source roots come from ClickHouse.
+          if (sql.startsWith(WORKFLOW_ROOTS_SQL)) return new Response(jsonLines([{ workflow_name: "review", root: join(directory, "capture"), newest: "2026-11-17 10:00:00" }]));
+          return new Response(clickHouseAnswer(sql));
         },
       },
     },
@@ -247,7 +267,21 @@ describe("server mode", () => {
     expect((await call(observatory, "GET", "/api/engine-runs/archon/run-1")).status).toBe(200);
   });
 
+  test("gives each workflow its domain, description and binding from the Archon home, and serves its YAML", async () => {
+    const { observatory } = serverApp();
+
+    const workflows = (await (await call(observatory, "GET", "/api/workflows")).json()) as { groups: object[] };
+    expect(workflows.groups).toMatchObject([
+      { workflow: "review", domain: "Code", description: "Reviews a change.", binding: { bindingId: "review", calendar: [{ hour: 3, minute: 15 }] } },
+    ]);
+    const source = await call(observatory, "GET", "/api/workflows/review/source");
+    expect(source.status).toBe(200);
+    expect(await source.json()).toMatchObject({ path: ".archon/workflows/code/review.yaml", text: "name: review\ndescription: Reviews a change.\n" });
+    expect((await call(observatory, "GET", "/api/workflows/missing/source")).status).toBe(404);
+  });
+
   test.each([
+    ["/api/workflows/..%2Fx/source"],
     ["/api/sessions/not-a-session/tree"],
     ["/api/calls/not-a-uuid"],
     ["/api/node-calls?kind=thread"],

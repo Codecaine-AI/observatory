@@ -15,6 +15,7 @@ import { limitConcurrency, MAX_CLICKHOUSE_QUERIES } from "./query-limit";
 import {
   DEFAULT_BLOCK_CACHE_BYTES,
   createArchonHomeReader,
+  createArchonWorkflowCatalog,
   createBlockCache,
   createClickHouseReader,
   createEngineRunRoutes,
@@ -56,7 +57,16 @@ import {
  *   GET /api/engine-runs/:engine/:runId/session
  *                                      the run node of a run and its Session
  *   GET /api/status                    the age of each source
- *   GET /api/workflows                 the workflow runs by workflow
+ *   GET /api/workflows                 the workflow runs by workflow, each with its domain,
+ *                                      description and Archon binding
+ *   GET /api/workflows/:name/source    the YAML of one workflow from a captured source
+ *
+ * The workflow facts come from the Archon home: the bindings of
+ * `<archonHome>/triggers`, and the YAML of the captured source that each
+ * run's record names, found through the home's archon.db, or through the
+ * run rows in ClickHouse when the home has no archon.db. The captured
+ * sources are folders of this host, so a workflow that ran on another host
+ * has no description and no YAML.
  *
  * The call reads of both route sets share 1 block cache, with the byte budget
  * of OBSERVATORY_BLOCK_CACHE_MB.
@@ -184,7 +194,8 @@ export function createEngineRunPlugins(
   if (mode === "server") {
     if (!gateway) throw new Error("Server mode needs TRACES_SQL_PASSWORD: its runs come from ClickHouse");
     reader = createClickHouseReader(gateway, { kernelDbPath: kernelDatabase.dbPath });
-    sessions = createSessionRoutes(createSessionReader(gateway), { prefix: ENGINE_RUNS_API_PREFIX });
+    const workflowCatalog = createArchonWorkflowCatalog(settings.archonHome, { clickhouse: gateway });
+    sessions = createSessionRoutes(createSessionReader({ ...gateway, workflowCatalog }), { prefix: ENGINE_RUNS_API_PREFIX });
   } else {
     reader = createArchonHomeReader(settings.archonHome, gateway ? { gateway } : {});
   }

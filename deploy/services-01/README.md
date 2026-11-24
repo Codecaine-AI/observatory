@@ -26,7 +26,8 @@ Caddy sends only `/api/*` and `/registry/*` to the API. It serves every other pa
 | `GET /api/unlinked-calls` | The calls with no node, grouped by cause |
 | `GET /api/engine-runs/:engine/:runId/session` | The run node of a workflow run and its Session |
 | `GET /api/status` | The age of each source and each collector heartbeat |
-| `GET /api/workflows` | The workflow runs, grouped by workflow, from the newest 5,000 |
+| `GET /api/workflows` | The workflow runs, grouped by workflow, from the newest 5,000, each with its domain, description and Archon binding |
+| `GET /api/workflows/:name/source` | The YAML of one workflow from the captured source of its newest run on this host; 404 when none |
 
 The UI in server mode has a left sidebar with Work and Workflows:
 
