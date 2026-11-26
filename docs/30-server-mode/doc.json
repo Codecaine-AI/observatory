@@ -57,7 +57,7 @@
           }
         },
         {
-          "insert": ", the API mounts no route that writes, runs a command, or reaches a registry project. It reads the engine runs and the Session trees from the trace ClickHouse, and the UI shows a sidebar with Work, Orphans, Unlinked calls and Workflows. This page gives what server mode turns off, the settings of the services-01 LaunchAgent, what stays on, and the server mode UI."
+          "insert": ", the API mounts no route that writes, runs a command, or reaches a registry project. It reads the engine runs, the Session trees and the token use from the trace ClickHouse, and the UI shows a sidebar with Work, Workflows, Tokens and Data health. This page gives what server mode turns off, the settings of the services-01 LaunchAgent, what stays on, and the server mode UI."
         }
       ],
       "children": []
@@ -593,7 +593,7 @@
           }
         },
         {
-          "insert": " sets 5 of the 7 Observatory variables, besides "
+          "insert": " sets 5 of the 8 Observatory variables, besides "
         },
         {
           "insert": "HOME",
@@ -651,7 +651,16 @@
           }
         },
         {
-          "insert": ", so the default budget applies."
+          "insert": " or "
+        },
+        {
+          "insert": "OBSERVATORY_HOST_TIME_ZONE",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so their defaults apply."
         }
       ],
       "children": []
@@ -747,10 +756,37 @@
                 }
               },
               {
-                "insert": ". Server mode reads only its "
+                "insert": ". Server mode reads its "
               },
               {
                 "insert": ".agent-kernel/trace.db",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", the bindings in "
+              },
+              {
+                "insert": "triggers/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", the run records of "
+              },
+              {
+                "insert": "archon.db",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", and the captured workflow sources in "
+              },
+              {
+                "insert": "workspaces/",
                 "attributes": {
                   "code": true
                 }
@@ -871,6 +907,31 @@
             ],
             "Not set, so 256",
             "256: the call block cache keeps at most 256 MiB. A whole number from 0 to 65536 sets the budget in MiB, 0 turns the cache off, and any other value throws at start."
+          ],
+          [
+            [
+              {
+                "insert": "OBSERVATORY_HOST_TIME_ZONE",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Not set, so the time zone of the process",
+            [
+              {
+                "insert": "The time zone of the process. The value is the IANA time zone of the Archon schedules, such as "
+              },
+              {
+                "insert": "America/Chicago",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", and any other value throws at start."
+              }
+            ]
           ]
         ],
         "title": "Variables of the services-01 LaunchAgent"
@@ -1234,7 +1295,7 @@
                 }
               },
               {
-                "insert": " and the 9 other Session routes"
+                "insert": " and the 11 other Session routes"
               }
             ],
             [
@@ -1347,7 +1408,7 @@
                 }
               },
               {
-                "insert": " and "
+                "insert": ", "
               },
               {
                 "insert": "/api/workflows",
@@ -1356,7 +1417,25 @@
                 }
               },
               {
-                "insert": ". The call reads of this group and of the engine run routes share 1 block cache. "
+                "insert": ", "
+              },
+              {
+                "insert": "/api/workflows/:name/source",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "/api/tokens",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". The 2 workflow routes also read the Archon home through the workflow catalog. The call reads of this group and of the engine run routes share 1 block cache. "
               },
               {
                 "insert": "test/server-mode.test.ts",
@@ -1365,7 +1444,7 @@
                 }
               },
               {
-                "insert": " checks that the unlinked call route and the run Session route answer, and that a write to either answers 404."
+                "insert": " checks that the unlinked call route, the run Session route and the 2 workflow routes answer, and that a write to the first 2 answers 404."
               }
             ]
           ]
@@ -1453,7 +1532,16 @@
           }
         },
         {
-          "insert": " picks the reader by mode. In server mode it also builds the Session reader from the gateway settings, and local mode mounts no Session route. Local mode uses "
+          "insert": " picks the reader by mode. In server mode it also builds the Session reader from the gateway settings and the workflow catalog of the Archon home ("
+        },
+        {
+          "insert": "createArchonWorkflowCatalog",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "), and local mode mounts no Session route. Local mode uses "
         },
         {
           "insert": "createArchonHomeReader",
@@ -1544,7 +1632,7 @@
           }
         },
         {
-          "insert": " user can run 2 ClickHouse queries at a time, and the Work tab alone reads 5 at once. "
+          "insert": " user can run 2 ClickHouse queries at a time, and one page can read more at once, such as the 6 queries of a Session page. "
         },
         {
           "insert": "limitConcurrency",
@@ -1668,7 +1756,16 @@
       },
       "text": [
         {
-          "insert": "Each query carries the signal of the HTTP request that asked for it, joined with the read service's timeout."
+          "insert": "A Session query carries the signal of the HTTP request that asked for it, joined with the read service's timeout. "
+        },
+        {
+          "insert": "GET /api/unlinked-calls",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " passes no request signal, because its cached read serves every request, and the engine run routes pass none either."
         }
       ],
       "children": []
@@ -1992,7 +2089,7 @@
                 }
               }
             ],
-            "The nodes with calls and no parent edge, by group, and a link to the Unlinked calls page",
+            "The nodes with calls and no parent edge, by group, and a link to the Unlinked calls page. The page sits under Data health.",
             "The Action log"
           ],
           [
@@ -2004,7 +2101,7 @@
                 }
               }
             ],
-            "The calls that join no node, grouped by cause. A click on a call opens its body.",
+            "The calls that join no node, grouped by cause. A click on a call opens its body. The page sits under Data health.",
             "The Action log"
           ],
           [
@@ -2014,10 +2111,123 @@
                 "attributes": {
                   "code": true
                 }
+              },
+              {
+                "insert": " and its query "
+              },
+              {
+                "insert": "workflow",
+                "attributes": {
+                  "code": true
+                }
               }
             ],
-            "The Workflows tab: the workflow runs by workflow and machine",
+            "The Workflows tab: the folder tree of the workflows and the inspector of one workflow, or All runs when the query names none",
             "The Action log"
+          ],
+          [
+            [
+              {
+                "insert": "/tokens",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and its query "
+              },
+              {
+                "insert": "range",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The Tokens tab: the token use by model over "
+              },
+              {
+                "insert": "1d",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "7d",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "30d",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "all",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". No range means "
+              },
+              {
+                "insert": "7d",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ],
+            "The Action log"
+          ],
+          [
+            [
+              {
+                "insert": "/runs",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "All runs of the Workflows tab. "
+              },
+              {
+                "insert": "ServerApp",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " replaces the address with "
+              },
+              {
+                "insert": "/workflows",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ],
+            "The engine run list"
           ],
           [
             [
@@ -2055,6 +2265,24 @@
         },
         {
           "insert": "?node=<kind>:<id>&call=<callId>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The Workflows route holds the selected workflow as "
+        },
+        {
+          "insert": "?workflow=<name>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and the Tokens route holds its range as "
+        },
+        {
+          "insert": "?range=<range>",
           "attributes": {
             "code": true
           }
@@ -2112,7 +2340,7 @@
       "props": {},
       "text": [
         {
-          "insert": "A Work address with a value that the page drops, such as "
+          "insert": "A Work or Workflows address with a value that the page drops, such as "
         },
         {
           "insert": "?phase=bogus",
@@ -2139,7 +2367,7 @@
           }
         },
         {
-          "insert": " replaces the history entry and pushes none, so the address, the selects and the read show the same filter."
+          "insert": " replaces the history entry and pushes none, so the address, the selects and the read show the same filter or selection."
         }
       ],
       "children": []
@@ -2188,7 +2416,16 @@
           }
         },
         {
-          "insert": ". The Viewer Packages page of the trace-viewer docs describes the parts of each page. A click on a run in the Workflows tab opens "
+          "insert": ", and puts the theme switch at the foot of the sidebar through "
+        },
+        {
+          "insert": "footer",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The Viewer Packages page of the trace-viewer docs describes the parts of each page. A run in a runs table of the Workflows tab opens "
         },
         {
           "insert": "/runs/:engine/:runId",
@@ -2197,7 +2434,7 @@
           }
         },
         {
-          "insert": ", and "
+          "insert": " in a new tab, and "
         },
         {
           "insert": "ServerApp",
