@@ -1632,7 +1632,7 @@
           }
         },
         {
-          "insert": " user can run 2 ClickHouse queries at a time, and the Work tab alone reads 5 at once. "
+          "insert": " user can run 2 ClickHouse queries at a time, and one page can read more at once, such as the 6 queries of a Session page. "
         },
         {
           "insert": "limitConcurrency",
@@ -1756,7 +1756,16 @@
       },
       "text": [
         {
-          "insert": "Each query carries the signal of the HTTP request that asked for it, joined with the read service's timeout."
+          "insert": "A Session query carries the signal of the HTTP request that asked for it, joined with the read service's timeout. "
+        },
+        {
+          "insert": "GET /api/unlinked-calls",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " passes no request signal, because its cached read serves every request, and the engine run routes pass none either."
         }
       ],
       "children": []
