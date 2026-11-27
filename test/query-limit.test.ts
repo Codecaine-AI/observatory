@@ -119,27 +119,38 @@ describe("the ClickHouse query queue", () => {
   });
 
   test("refuses a query at once when the queue is full, and takes new ones when it drains", async () => {
+    // Each query that reaches ClickHouse says so, and holds its body until the test finishes it.
     const finish: (() => void)[] = [];
+    let markStarted = () => {};
+    let started = new Promise<void>((resolve) => (markStarted = resolve));
     const limited = limitConcurrency(
       async () => {
         const body = new Promise<ArrayBuffer>((resolve) => finish.push(() => resolve(new ArrayBuffer(0))));
+        markStarted();
         return { status: 200, statusText: "OK", headers: new Headers(), arrayBuffer: () => body } as unknown as Response;
       },
       1,
       { maxWaiting: 2 },
     );
-    const held = [limited("running"), limited("waiting 1"), limited("waiting 2")];
-    const refused = limited("one too many");
-    await expect(refused).rejects.toBeInstanceOf(ClickHouseBusyError);
-    await expect(refused).rejects.toThrow("2 trace store queries wait already");
-    for (let round = 0; round < 3; round++) {
-      await Bun.sleep(1);
+    const finishRunning = async () => {
+      await started;
+      started = new Promise<void>((resolve) => (markStarted = resolve));
       finish.shift()!();
-    }
+    };
+    const held = [limited("running"), limited("waiting 1"), limited("waiting 2")];
+    // The refusal settles before any held query moves. A query that joined the queue would stay unsettled.
+    let refusal: unknown = "still waiting";
+    void limited("one too many").then(
+      () => (refusal = "answered"),
+      (error: unknown) => (refusal = error),
+    );
+    await started;
+    expect(refusal).toBeInstanceOf(ClickHouseBusyError);
+    expect((refusal as Error).message).toContain("2 trace store queries wait already");
+    for (let round = 0; round < 3; round++) await finishRunning();
     await Promise.all(held);
     const after = limited("after");
-    await Bun.sleep(1);
-    finish.shift()!();
+    await finishRunning();
     expect((await after).status).toBe(200);
   });
 
