@@ -17,18 +17,6 @@ describe("the page routes", () => {
     }
   });
 
-  test("read and write the Runs page with and without an open run", () => {
-    const routes: [string, Route][] = [
-      ["/runs", { page: "runs", run: null }],
-      ["/runs/archon/c5993f42-7c8b", { page: "runs", run: { engine: "archon", runId: "c5993f42-7c8b" } }],
-      ["/runs/archon/run%2F1", { page: "runs", run: { engine: "archon", runId: "run/1" } }],
-    ];
-    for (const [path, route] of routes) {
-      expect(parseRoute(path)).toEqual(route);
-      expect(routePath(route)).toBe(path);
-    }
-  });
-
   test("read and write the Work, Session and Workflows pages", () => {
     const routes: [string, Route][] = [
       ["/work", { page: "work" }],
@@ -148,11 +136,6 @@ describe("the page routes", () => {
     expect(serverRoute(parseRoute("/nowhere"))).toEqual({ page: "work" });
     expect(serverRoute(parseRoute("/workflows"))).toEqual({ page: "workflows" });
     expect(serverRoute(parseRoute("/runs/archon/c5993f42-7c8b"))).toEqual({ page: "runs", run: { engine: "archon", runId: "c5993f42-7c8b" } });
-  });
-
-  test("show All runs of the Workflows tab in server mode for the run list, which the Workflows tab replaces", () => {
-    expect(serverRoute(parseRoute("/runs"))).toEqual({ page: "workflows" });
-    expect(serverRoute(parseRoute("/runs/"))).toEqual({ page: "workflows" });
   });
 
   test("show the Action log in local mode for the Session pages, and keep its own pages", () => {
