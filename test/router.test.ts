@@ -4,12 +4,15 @@ import { apiLabel } from "../src/ui/apiOrigin";
 import { cleanAddress, isPlainLeftClick, localPageTitle, localRoute, parseRoute, routePath, serverRoute, type Route } from "../src/ui/router";
 
 describe("the page routes", () => {
-  test("read and write the Action log and Traces pages", () => {
+  test("read and write the Action log, Traces and Runs pages", () => {
     const routes: [string, Route][] = [
       ["/", { page: "actions" }],
       ["/traces", { page: "traces", projectId: null }],
       ["/traces/simple-research", { page: "traces", projectId: "simple-research" }],
       ["/traces/team%2Fkernel%20one", { page: "traces", projectId: "team/kernel one" }],
+      ["/runs", { page: "runs", run: null }],
+      ["/runs/archon/c5993f42-7c8b", { page: "runs", run: { engine: "archon", runId: "c5993f42-7c8b" } }],
+      ["/runs/archon/run%2F1", { page: "runs", run: { engine: "archon", runId: "run/1" } }],
     ];
     for (const [path, route] of routes) {
       expect(parseRoute(path)).toEqual(route);
@@ -136,6 +139,9 @@ describe("the page routes", () => {
     expect(serverRoute(parseRoute("/nowhere"))).toEqual({ page: "work" });
     expect(serverRoute(parseRoute("/workflows"))).toEqual({ page: "workflows" });
     expect(serverRoute(parseRoute("/runs/archon/c5993f42-7c8b"))).toEqual({ page: "runs", run: { engine: "archon", runId: "c5993f42-7c8b" } });
+    // The run list becomes All runs of the Workflows tab.
+    expect(serverRoute(parseRoute("/runs"))).toEqual({ page: "workflows" });
+    expect(serverRoute(parseRoute("/runs/"))).toEqual({ page: "workflows" });
   });
 
   test("show the Action log in local mode for the Session pages, and keep its own pages", () => {

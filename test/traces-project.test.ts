@@ -37,6 +37,11 @@ describe("the Traces page project", () => {
       kind: "not-found",
       projectId: "beta",
     });
+    // A refresh that is still loading but has a list says not found too, not loading.
+    expect(resolveTracesProject([project("alpha")], "beta", true)).toEqual({
+      kind: "not-found",
+      projectId: "beta",
+    });
   });
 
   test("waits for the first registry read before it says not found", () => {
